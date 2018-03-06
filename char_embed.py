@@ -29,7 +29,7 @@ def train(args):
                         # if first occurence of character, initialize sum to word vector and set counter to 1
                         char_vectors[char] = (word_vec, 1)
 
-    output_file = os.path.splitext(os.path.basename(args.file_path))[0] + '-char.txt'
+    output_file = os.path.join('models', os.path.splitext(os.path.basename(args.file_path))[0] + '-char.txt')
     with open(output_file, 'w') as char_embeds:
         for char in char_vectors:
             # average all word vectors containing character (& round to 6 decimal places)
