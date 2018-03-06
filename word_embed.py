@@ -16,8 +16,8 @@ class Glove(object):
         dict        : dictionary that maps vocabulary to the index
     """
     def __init__(self, pre_trained=True):
-        self.GLOVE_PATH = os.getcwd() + '/data/glove.6B.zip'
-        self.GLOVE_FILE = 'glove.6B.300d.txt'  # can change it to glove.6B.50d.txt, glove.6B.100d.txt, glove.6B.200d.txt
+        self.GLOVE_PATH = os.getcwd() + '/data/glove.840B.300d.zip'
+        self.GLOVE_FILE = 'glove.840B.300d.txt'  # can change it to glove.6B.50d.txt, glove.6B.100d.txt, glove.6B.200d.txt
         # load the file
         if pre_trained:
             glove = zipfile.ZipFile(self.GLOVE_PATH, 'r')
