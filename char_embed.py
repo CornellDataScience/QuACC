@@ -19,11 +19,9 @@ def train(args):
             line_split = line.strip().split(' ')              # remove leading/trailing whitespace, split on space
             word_vec = np.array(line_split[1:], dtype=float)  # 300-dimensional vector from GloVe
             word_txt = line_split[0]                          # actual word
-            if len(word_vec) != 300:
-                print(word_vec.shape, word_txt)
 
             for char in word_txt:
-                if ord(char) < 128:                           # check if char is a normal ASCII character
+                if ord(char) < 128:                           # check if char is normal ASCII character
                     if char in char_vectors:
                         # add word vector to cumulative sum, increment counter
                         char_vectors[char] = (char_vectors[char][0] + word_vec, char_vectors[char][1] + 1)
