@@ -67,7 +67,7 @@ class Word2Vec(object):
         if word in self.model.wv.vocab.keys():
             return self.model[word]
         else:
-            return np.zeros(300 )
+            return np.zeros(300)
 
 
 if __name__ == '__main__':
