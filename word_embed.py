@@ -43,7 +43,8 @@ class Glove(object):
         else:
             return None
 
-class Pretrained_Word2Vec(object):
+
+class Word2Vec(object):
     """Pretrained word2vec vectorizer
     Attributes:
         WORD2VEC_PATH  : path to the zipped file
@@ -52,7 +53,7 @@ class Pretrained_Word2Vec(object):
     """
     def __init__(self):
         self.WORD2VEC_PATH = os.getcwd() + '/data/GoogleNews-vectors-negative300.bin'
-        self.model = gensim.models.KeyedVectors.load_word2vec_format(self.WORD2VEC_PATH , binary=True)
+        self.model = gensim.models.KeyedVectors.load_word2vec_format(self.WORD2VEC_PATH, binary=True)
         self.dict = {word: i for i, word in enumerate(self.model.wv.vocab.keys())}
 
     def vectorize(self, word):
@@ -70,6 +71,6 @@ class Pretrained_Word2Vec(object):
 
 if __name__ == '__main__':
     # model = Glove()
-    model = Pretrained_Word2Vec()
-    print (model.vectorize('person'))
-    print (model.vectorize('CDS'))
+    model = Word2Vec()
+    print(model.vectorize('person'))
+    print(model.vectorize('CDS'))
