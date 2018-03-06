@@ -53,3 +53,11 @@ better initializations using SpaCy named entity recognition? Recursively
 feed OOV tokens into R-Net?  
 (e.g. If unknown token is "X", feed first paragraph of article "X" on
 Wikipedia into R-Net and ask "What is X"?) 
+
+03/06 (Kenta, Yuji)
+* Created `char_embed.py`
+  * Character embeddings used by [this](https://github.com/minsangkim142/R-net)
+  implementation of R-Net uses character-level embeddings that
+  are just weighted averages of every word vector in which
+  the character appears.
+  * Created character embeddings from pre-trained GloVe.
