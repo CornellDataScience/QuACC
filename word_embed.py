@@ -1,6 +1,7 @@
 import os
 import zipfile
 import pandas as pd
+import numpy as np
 import csv
 import gensim
 
@@ -41,7 +42,7 @@ class Glove(object):
             index = self.dict[word]
             return self.model[index]
         else:
-            return None
+            return np.zeros(300)
 
 
 class Word2Vec(object):
@@ -66,7 +67,7 @@ class Word2Vec(object):
         if word in self.model.wv.vocab.keys():
             return self.model[word]
         else:
-            return None
+            return np.zeros(300 )
 
 
 if __name__ == '__main__':
