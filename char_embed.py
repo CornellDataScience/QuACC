@@ -25,7 +25,7 @@ def train(args):
                 print(word_vec.shape, line)
 
             for char in word_txt:
-                if ord(char) < 128:                           # check if char is a normal ASCII character
+                if ord(char) < 128:                           # check if char is normal ASCII character
                     if char in char_vectors:
                         # add word vector to cumulative sum, increment counter
                         char_vectors[char] = (char_vectors[char][0] + word_vec, int(char_vectors[char][1]) + 1)
