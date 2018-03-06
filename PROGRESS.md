@@ -41,8 +41,8 @@
   * Return vectorized word if it exists in the vocabulary, `None` otherwise.
   * Sample usage:
   ```python
-    from pretrained_word_models import Pretrained_Word2Vec
-    model = Pretrained_Word2Vec()
+    from word_embed import Word2Vec
+    model = Word2Vec()
     model.vectorize('hello')
   ```
 
