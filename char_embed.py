@@ -20,13 +20,15 @@ def train(args):
             word_vec = np.array(line_split[1:], dtype=float)  # 300-dimensional vector from GloVe
             word_txt = line_split[0]                          # actual word
             if len(word_vec) != 300:
-                print(word_vec.shape, word_txt)
+                word_vec = np.array(line_split, dtype=float)
+                word_txt = ' '
+                print(word_vec.shape, line)
 
             for char in word_txt:
                 if ord(char) < 128:                           # check if char is a normal ASCII character
                     if char in char_vectors:
                         # add word vector to cumulative sum, increment counter
-                        char_vectors[char] = (char_vectors[char][0] + word_vec, char_vectors[char][1] + 1)
+                        char_vectors[char] = (char_vectors[char][0] + word_vec, int(char_vectors[char][1]) + 1)
                     else:
                         # if first occurence of character, initialize sum to word vector and set counter to 1
                         char_vectors[char] = (word_vec, 1)
