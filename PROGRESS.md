@@ -16,9 +16,9 @@
   * Return vectorized word if it exists in the vocabulary, `None` otherwise.
   * Sample usage:
   ```python
-    from word_embed import Glove
-    model = Glove()
-    model.vectorize('hello')
+  from word_embed import Glove
+  model = Glove()
+  model.vectorize('hello')
   ```
 
 03/01 (Yuji):
@@ -41,9 +41,9 @@
   * Return vectorized word if it exists in the vocabulary, `None` otherwise.
   * Sample usage:
   ```python
-    from word_embed import Word2Vec
-    model = Word2Vec()
-    model.vectorize('hello')
+  from word_embed import Word2Vec
+  model = Word2Vec()
+  model.vectorize('hello')
   ```
 
 03/05 (Kenta, Yuji)
@@ -66,5 +66,18 @@ Wikipedia into R-Net and ask "What is X"?)
 * Created `layers.py`, `model.py`
   * Potential exploration topic: why does R-Net only feed the last
   hidden layer of the bi-directional RNN for character embeddings?
+  * Implemented `encoding` (does embedding lookup for words, chars)
+  and `bidirectional_rnn`.
 * Created `hyperparams.py`
   * Store all hyperparameters as a class.
+* Created `loader.py`
+  * Encode all context paragraphs and save
+  * From raw_questions.csv, read article name & paragraph number,
+  look up encoded paragraph
+  * Encode question
+  * Find answer start index & answer end index
+* Schedule for next week:
+  * Read about pointer net (alternatives ?)
+  * Re-read R-Net, BiDAF, Mnemonic Reader papers
+  * Exploratory analysis of SQuAD
+  * Presentation
