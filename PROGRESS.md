@@ -16,7 +16,7 @@
   * Return vectorized word if it exists in the vocabulary, `None` otherwise.
   * Sample usage:
   ```python
-    from glove import Glove
+    from word_embed import Glove
     model = Glove()
     model.vectorize('hello')
   ```
@@ -61,3 +61,10 @@ Wikipedia into R-Net and ask "What is X"?)
   are just weighted averages of every word vector in which
   the character appears.
   * Created character embeddings from pre-trained GloVe.
+  
+03/08 (All)
+* Created `layers.py`, `model.py`
+  * Potential exploration topic: why does R-Net only feed the last
+  hidden layer of the bi-directional RNN for character embeddings?
+* Created `hyperparams.py`
+  * Store all hyperparameters as a class.
