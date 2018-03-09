@@ -16,7 +16,7 @@ def encoding(word, char, word_embeddings, char_embeddings, scope="embedding"):
         char_embeddings (np.ndarray): pretrained nxm matrix where n = number of vocabulary and
                                       m = embedding dimension (default 300)
         scope (str):                  tensorflow variable scope
-    
+
     Returns:
         word_encoding (tensor)
         char_encoding (tensor)

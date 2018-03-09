@@ -1,6 +1,7 @@
 """
 All hyperparameters. Implemented as a class for convenience, but operates identically to an argument parser.
 """
+import pickle
 
 
 class Hyperparams:
@@ -19,3 +20,13 @@ class Hyperparams:
     # architecture
     emb_size = 300
 
+    # SQuAD related info
+    with open('./data/question-word-dict.pkl', 'rb') as f:
+        question_word_dict = pickle.load(f)
+    with open('./data/question-char-dict.pkl', 'rb') as f:
+        question_char_dict = pickle.load(f)
+
+    # word vocabulary
+    vocab_size = len(question_word_dict)
+    # character vocabulary
+    char_vocab_size = len(question_char_dict)
