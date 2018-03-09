@@ -1,7 +1,9 @@
 """
 All hyperparameters. Implemented as a class for convenience, but operates identically to an argument parser.
 """
+
 import pickle
+import tensorflow as tf
 
 
 class Hyperparams:
@@ -19,6 +21,9 @@ class Hyperparams:
 
     # architecture
     emb_size = 300
+    rnn1_cell_type = tf.contrib.rnn.GRUCell
+    rnn1_num_layers = 1
+    rnn1_num_units = 75
 
     # SQuAD related info
     with open('./data/question-word-dict.pkl', 'rb') as f:
@@ -26,7 +31,6 @@ class Hyperparams:
     with open('./data/question-char-dict.pkl', 'rb') as f:
         question_char_dict = pickle.load(f)
 
-    # word vocabulary
-    vocab_size = len(question_word_dict)
-    # character vocabulary
+    # vocabulary sizes
+    word_vocab_size = len(question_word_dict)
     char_vocab_size = len(question_char_dict)
