@@ -15,7 +15,7 @@ class Model(object):
             load_pretrained  (bool): If True, load the model at the instantiation
         """
         if load_pretrained:
-            char_embeddings = np.zeros((len(Hyperparams.question_char_dict), Hyperparams.emb_size))
+            char_embeddings = np.zeros([Hyperparams.char_vocab_size, Hyperparams.emb_size])
             char_glove = self.load_glove(Hyperparams.glove_char)
             char2id = {}
             id2char = {}
@@ -27,8 +27,10 @@ class Model(object):
                 else:
                     char_embeddings[i] = np.zeros(Hyperparams.emb_size)
             self.char_embeddings = tf.Variable(tf.constant(char_embeddings), trainable=True, name="char_embeddings")
+            self.char2id = char2id
+            self.id2char = id2char
 
-            word_embeddings = np.zeros((len(Hyperparams.question_word_dict), Hyperparams.emb_size))
+            word_embeddings = np.zeros([Hyperparams.vocab_size, Hyperparams.emb_size])
             word_glove = self.load_glove(Hyperparams.glove_word)
             word2id = {}
             id2word = {}
@@ -39,10 +41,9 @@ class Model(object):
                     word_embeddings[i] = word_glove.get(word)
                 else:
                     word_embeddings[i] = np.zeros(Hyperparams.emb_size)
-
-            self.word_embeddings = tf.Variable(tf.constant(0.0, shape=[Hyperparams.vocab_size, Hyperparams.emb_size]),trainable=False, name="word_embeddings")
-            self.char2id = char2id
-            self.id2char = id2char
+            self.word_embeddings = tf.Variable(tf.constant(word_embeddings),trainable=False, name="word_embeddings")
+            self.word2id = word2id
+            self.id2word = id2word
 
         else:
             self.char_embeddings = tf.Variable(tf.constant(0.0, shape=[Hyperparams.char_vocab_size, Hyperparams.emb_size]),trainable=True, name="char_embeddings")
@@ -50,6 +51,7 @@ class Model(object):
 
 
     def load_glove(self, directory):
+        embedding_vectors = {}
         with open(directory, 'r') as f:
             for line in f:
                 line_split = line.strip().split(" ")
@@ -65,3 +67,4 @@ if __name__ == '__main__':
     with tf.Session() as sess:
         tf.global_variables_initializer().run()
         print(QuACC.char_embeddings.eval())
+        print(QuACC.char2id)
