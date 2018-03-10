@@ -14,21 +14,15 @@ class Model(object):
     """Main model
 
     Attributes:
-        load_pretrained (bool):         if True, load the model at the instantiation
+        load_pretrained (bool):         if True, load the model at instantiation
         char_embeddings (tf.Variable):  mxn matrix that contains character embedding
-                                        each row represents character token and
-                                        columns represent embedded dimension
+                                        each row represents character token, each column represents embedded dimension
         word_embeddings (tf.Variable):  mxn matrix that contains word embedding
-                                        each row represents one word and
-                                        columns represent embedded dimension
-        q_input_char (tf.placeholder):  placeholder for a question converted to
-                                        character ids
-        q_input_word (tf.placeholder):  placeholder for a question converted to
-                                        word ids
-        q_encoded_char (tensor):        a tensor after encoding the input character
-                                        to the glove embedding
-        q_encoded_word (tensor):        a tensor after encoding the input words
-                                        to the glove embedding
+                                        each row represents one word, each column represents embedded dimension
+        q_input_char (tf.placeholder):  placeholder for a question converted to character ids
+        q_input_word (tf.placeholder):  placeholder for a question converted to word ids
+        q_encoded_char (tensor):        a tensor after encoding the input characters to GloVe embedding
+        q_encoded_word (tensor):        a tensor after encoding the input words to GloVe embedding
     """
     def __init__(self, load_pretrained=True):
         if load_pretrained:
