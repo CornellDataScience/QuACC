@@ -22,8 +22,9 @@ class Hyperparams:
     # architecture
     emb_size = 300
     rnn1_cell_type = tf.contrib.rnn.GRUCell
-    rnn1_num_layers = 1
-    rnn1_num_units = 75
+    rnn1_num_layers = 3
+    rnn1_num_units = 80
+    rnn1_dropout = 0.2
 
     # SQuAD related info
     with open('./data/word2id-dict.pkl', 'rb') as f:

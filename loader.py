@@ -6,6 +6,13 @@ import numpy as np
 
 
 def tokenize(text, mode = 'character'):
+    """return list of tokenized word or character
+    Args:
+        text (string): string to vectorize
+        mode (string): 'charcter' or 'word'. Change the scope of tokenization
+    Returns:
+        array of tokens
+    """
     assert mode in {'character', 'word'}, "Select 'word' or 'character'"
     if mode == 'character':
         return [c for c in text]
@@ -16,6 +23,13 @@ def tokenize(text, mode = 'character'):
         return tokens
 
 def convert_to_ids(text, mode = 'character'):
+    """return list of unique ids for the corresponding word or character in the input text
+    Args:
+        text (string): string to vectorize
+        mode (string): 'charcter' or 'word'. Change the scope of tokenization
+    Returns:
+        array of unique ids for the corresponding characters or words
+    """
     assert mode in {'character', 'word'}, "Select 'word' or 'character'"
     lookup = Hyperparams.char2id if mode == 'character' else Hyperparams.word2id
     max_len = Hyperparams.max_question_c if mode == 'character' else Hyperparams.max_question_w

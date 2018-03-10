@@ -4,6 +4,7 @@ Main model.
 
 from hyperparams import Hyperparams
 import tensorflow as tf
+from tensorflow.contrib.rnn import GRUCell
 from layers import *
 from util import load_glove
 from loader import *
@@ -40,6 +41,7 @@ class Model(object):
                 else:
                     # TODO is initializing with zero vector smart?
                     char_embeddings[i] = np.zeros(Hyperparams.emb_size)
+            # build a tensor for the lookup
             self.char_embeddings = tf.Variable(tf.constant(char_embeddings), trainable=True, name="char_embeddings")
 
             print('start loading word embedding')
@@ -51,6 +53,7 @@ class Model(object):
                 else:
                     # TODO is initializing with zero vector smart?
                     word_embeddings[i] = np.zeros(Hyperparams.emb_size)
+            # build a tensor for the lookup
             self.word_embeddings = tf.Variable(tf.constant(word_embeddings), trainable=False, name="word_embeddings")
 
         else:
@@ -59,10 +62,16 @@ class Model(object):
             self.word_embeddings = tf.Variable(tf.constant(0.0, shape=[Hyperparams.word_vocab_size+1, Hyperparams.emb_size]),
                                                trainable=False, name="word_embeddings")
 
-        self.q_input_char = tf.placeholder(tf.int32, [Hyperparams.max_question_c], "question_c")
-        self.q_input_word = tf.placeholder(tf.int32, [Hyperparams.max_question_w], "question_w")
-        self.q_encoded_word, self.q_encoded_char = \
+        # input placeholders
+        self.q_input_char = tf.placeholder(tf.int32, [None, Hyperparams.max_question_c], "question_c")
+        self.q_input_word = tf.placeholder(tf.int32, [None, Hyperparams.max_question_w], "question_w")
+        # encode the words using glove
+        self.q_encoded_word, q_encoded_char = \
         encoding(self.q_input_word, self.q_input_char, self.word_embeddings, self.char_embeddings)
+        # store the final layer of bidirectional gru unit for the character embedding
+        self.q_encoded_char = bidirectional_rnn(q_encoded_char, [Hyperparams.max_question_c], Hyperparams.rnn1_cell_type, \
+        Hyperparams.rnn1_num_units, Hyperparams.rnn1_num_layers, Hyperparams.rnn1_dropout)
+
 
 if __name__ == '__main__':
     sample_qc = convert_to_ids('What is in front of the Notre Dame Main Building?', mode='character')
@@ -73,7 +82,7 @@ if __name__ == '__main__':
     with tf.Session() as sess:
         init = tf.global_variables_initializer()
         sess.run(init)
-        feed_dict = {QuACC.q_input_char : sample_qc, QuACC.q_input_word : sample_qw}
-        index = sess.run([QuACC.q_encoded_char, QuACC.q_encoded_word], feed_dict=feed_dict)
+        feed_dict = {QuACC.q_input_char : sample_qc.reshape(1, -1), QuACC.q_input_word : sample_qw.reshape(1, -1)}
+        index = sess.run([QuACC.q_encoded_char], feed_dict=feed_dict)
 
-        print (index)
+        print (index[0]) # 1 x 80 x (2 x char len)
