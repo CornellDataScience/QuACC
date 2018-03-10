@@ -2,12 +2,11 @@
 Main model.
 """
 
-import numpy as np
 import tensorflow as tf
 from hyperparams import Hyperparams
 from layers import encoding, bidirectional_rnn
 from loader import tokenize, convert_to_ids
-from util import load_glove
+from util import load_glove, embedding_matrix
 
 
 class Model(object):
@@ -25,46 +24,27 @@ class Model(object):
         q_encoded_word (tensor):        a tensor after encoding the input words to GloVe embedding
     """
     def __init__(self, load_pretrained=True):
-        if load_pretrained:
-            print('start loading character embedding')
-            char_embeddings = np.zeros([Hyperparams.char_vocab_size+1, Hyperparams.emb_size])
-            char_glove = load_glove(Hyperparams.glove_char)    # load matrix
-            for char, i in Hyperparams.char2id.items():
-                if char in char_glove:
-                    char_embeddings[i] = char_glove.get(char)  # insert embedding
-                else:
-                    # TODO is initializing with zero vector smart?
-                    char_embeddings[i] = np.zeros(Hyperparams.emb_size)
-            # build a tensor for the lookup
-            self.char_embeddings = tf.Variable(tf.constant(char_embeddings), trainable=True, name="char_embeddings")
 
-            print('start loading word embedding')
-            word_embeddings = np.zeros([Hyperparams.word_vocab_size+1, Hyperparams.emb_size])
-            word_glove = load_glove(Hyperparams.glove_word)    # load matrix
-            for word, i in Hyperparams.word2id.items():
-                if word in word_glove:
-                    word_embeddings[i] = word_glove.get(word)  # insert embedding
-                else:
-                    # TODO is initializing with zero vector smart?
-                    word_embeddings[i] = np.zeros(Hyperparams.emb_size)
-            # build a tensor for the lookup
-            self.word_embeddings = tf.Variable(tf.constant(word_embeddings), trainable=False, name="word_embeddings")
+        char_glove = load_glove(Hyperparams.glove_char) if load_pretrained else {}
+        word_glove = load_glove(Hyperparams.glove_word) if load_pretrained else {}
+        char_embeddings = embedding_matrix(char_glove, 'character')
+        word_embeddings = embedding_matrix(word_glove, 'word')
 
-        else:
-            self.char_embeddings = tf.Variable(tf.zeros([Hyperparams.char_vocab_size+1, Hyperparams.emb_size]),
-                                               trainable=True, name="char_embeddings")
-            self.word_embeddings = tf.Variable(tf.zeros([Hyperparams.word_vocab_size+1, Hyperparams.emb_size]),
-                                               trainable=False, name="word_embeddings")
+        # create tensor for word & character embeddings
+        self.char_embeddings = tf.Variable(tf.constant(char_embeddings), trainable=True, name='char_embeddings')
+        self.word_embeddings = tf.Variable(tf.constant(word_embeddings), trainable=False, name='word_embeddings')
 
         # input placeholders
-        self.q_input_char = tf.placeholder(tf.int32, [None, Hyperparams.max_question_c], "question_c")
-        self.q_input_word = tf.placeholder(tf.int32, [None, Hyperparams.max_question_w], "question_w")
+        self.q_input_char = tf.placeholder(tf.int32, [None, Hyperparams.max_question_c], 'question_c')
+        self.q_input_word = tf.placeholder(tf.int32, [None, Hyperparams.max_question_w], 'question_w')
+
         # encode the words using glove
         self.q_encoded_word, q_encoded_char = \
             encoding(self.q_input_word, self.q_input_char, self.word_embeddings, self.char_embeddings)
-        # store the final layer of bidirectional gru unit for the character embedding
+
+        # store the final layer of bidirectional GRU as character embedding
         self.q_encoded_char = bidirectional_rnn(q_encoded_char, [Hyperparams.max_question_c],
-                                                Hyperparams.rnn1_cell_type, Hyperparams.rnn1_num_units,
+                                                Hyperparams.rnn1_cell_type,  Hyperparams.rnn1_num_units,
                                                 Hyperparams.rnn1_num_layers, Hyperparams.rnn1_dropout)
 
 
