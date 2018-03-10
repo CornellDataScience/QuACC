@@ -7,7 +7,7 @@ import numpy as np
 from tensorflow.contrib.rnn import DropoutWrapper, MultiRNNCell
 
 
-def encoding(word, char, word_embeddings, char_embeddings, scope="embedding"):
+def encoding(word, char, word_embeddings, char_embeddings, scope='embedding'):
     """Encode the list of word ids and character ids to pretrained embeddings using tf.nn.embedding_lookup
     Args:
         word (list):                  list of word ids
@@ -65,6 +65,10 @@ def bidirectional_rnn(inputs, input_lengths, cell_type, num_units, num_layers, d
             return tf.concat(outputs, axis=2)
         else:
             return tf.reshape(tf.concat(states, axis=1), (input_dims[0], input_dims[1], 2 * num_units))
+
+
+def pointer_net(inputs):
+    pass
 
 
 def cnn_embedding(inputs):
