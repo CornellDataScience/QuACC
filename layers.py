@@ -3,18 +3,17 @@ Layers of neural network architecture.
 """
 
 import tensorflow as tf
-import numpy as np
 from tensorflow.contrib.rnn import DropoutWrapper, MultiRNNCell
 
 
 def encoding(word, char, word_embeddings, char_embeddings, scope='embedding'):
     """Encode the list of word ids and character ids to pretrained embeddings using tf.nn.embedding_lookup
     Args:
-        word (list):                  list of word ids
-        char (list):                  list of char ids
-        word_embeddings (np.ndarray): pretrained [(size of vocabulary) x (embedding dimension; default 300)] matrix
-        char_embeddings (np.ndarray): pretrained [(size of vocabulary) x (embedding dimension; default 300)] matrix
-        scope (str):                  tensorflow variable scope
+        word (list):                   list of word ids
+        char (list):                   list of char ids
+        word_embeddings (tf.Variable): pretrained [(size of vocabulary) x (embedding dimension; default 300)] matrix
+        char_embeddings (tf.Variable): pretrained [(size of vocabulary) x (embedding dimension; default 300)] matrix
+        scope (str):                   tensorflow variable scope
 
     Returns:
         word_encoding (tensor)

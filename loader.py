@@ -1,15 +1,17 @@
-''' data loader with tf.train.batch class
-'''
+"""
+Data loader with tf.train.batch class
+"""
+
+import numpy as np
 import spacy
 from hyperparams import Hyperparams
-import numpy as np
 
 
-def tokenize(text, mode = 'character'):
+def tokenize(text, mode='character'):
     """return list of tokenized word or character
     Args:
         text (string): string to vectorize
-        mode (string): 'charcter' or 'word'. Change the scope of tokenization
+        mode (string): 'character' or 'word'. Change the scope of tokenization
     Returns:
         array of tokens
     """
@@ -22,11 +24,12 @@ def tokenize(text, mode = 'character'):
         tokens = [i.text for i in parsed]
         return tokens
 
-def convert_to_ids(text, mode = 'character'):
+
+def convert_to_ids(text, mode='character'):
     """return list of unique ids for the corresponding word or character in the input text
     Args:
         text (string): string to vectorize
-        mode (string): 'charcter' or 'word'. Change the scope of tokenization
+        mode (string): 'character' or 'word'. Change the scope of tokenization
     Returns:
         array of unique ids for the corresponding characters or words
     """
@@ -41,5 +44,5 @@ def convert_to_ids(text, mode = 'character'):
 
 
 if __name__ == '__main__':
-    print (convert_to_ids('What is in front of the Notre Dame Main Building?', mode = 'character'))
-    print (convert_to_ids('What is in front of the Notre Dame Main Building?', mode = 'word'))
+    print(convert_to_ids('What is in front of the Notre Dame Main Building?', mode='character'))
+    print(convert_to_ids('What is in front of the Notre Dame Main Building?', mode='word'))
