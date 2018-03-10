@@ -22,15 +22,24 @@ class Hyperparams:
     # architecture
     emb_size = 300
     rnn1_cell_type = tf.contrib.rnn.GRUCell
-    rnn1_num_layers = 1
-    rnn1_num_units = 75
+    rnn1_num_layers = 3
+    rnn1_num_units = 80
+    rnn1_dropout = 0.2
 
     # SQuAD related info
-    with open('./data/question-word-dict.pkl', 'rb') as f:
-        question_word_dict = pickle.load(f)
-    with open('./data/question-char-dict.pkl', 'rb') as f:
-        question_char_dict = pickle.load(f)
+    with open('./data/word2id-dict.pkl', 'rb') as f:
+        word2id = pickle.load(f)
+    with open('./data/id2word-dict.pkl', 'rb') as f:
+        id2word = pickle.load(f)
+    with open('./data/char2id-dict.pkl', 'rb') as f:
+        char2id = pickle.load(f)
+    with open('./data/id2char-dict.pkl', 'rb') as f:
+        id2char = pickle.load(f)
 
     # vocabulary sizes
-    word_vocab_size = len(question_word_dict)
-    char_vocab_size = len(question_char_dict)
+    word_vocab_size = len(word2id)
+    char_vocab_size = len(char2id)
+
+    # input size
+    max_question_c = 80
+    max_question_w = 30

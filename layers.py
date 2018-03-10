@@ -60,7 +60,7 @@ def bidirectional_rnn(inputs, input_lengths, cell_type, num_units, num_layers, d
         else:
             cell_fw, cell_bw = rnn_cell(), rnn_cell()
 
-        outputs, states = tf.nn.bidirectional_dynamic_rnn(cell_fw, cell_bw, inputs, input_lengths, dtype=tf.float32)
+        outputs, states = tf.nn.bidirectional_dynamic_rnn(cell_fw, cell_bw, inputs, input_lengths, dtype=tf.float64)
         if output:
             return tf.concat(outputs, axis=2)
         else:
