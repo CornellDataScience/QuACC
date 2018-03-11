@@ -81,3 +81,8 @@ Wikipedia into R-Net and ask "What is X"?)
   * Re-read R-Net, BiDAF, Mnemonic Reader papers
   * Exploratory analysis of SQuAD
   * Presentation
+  
+03/10 (Yuji)
+* Moved loading GloVe model to `util.py`
+  * If `load_pretrained=False`, should embedding matrix be
+  initialized to identity matrix? (i.e. one-hot encoding)
