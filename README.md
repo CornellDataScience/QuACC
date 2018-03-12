@@ -15,3 +15,7 @@ a system to answer questions from the
 [SQuAD](https://rajpurkar.github.io/SQuAD-explorer/) dataset. 
   
 ![Sample QA](https://tensorflowkorea.files.wordpress.com/2016/06/squad-explore.png)
+
+## Model Architecture
+
+![R Net](analysis/R-Net.png)
