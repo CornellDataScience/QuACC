@@ -82,6 +82,11 @@ Wikipedia into R-Net and ask "What is X"?)
   * Exploratory analysis of SQuAD
   * Presentation
   
+03/09 (Kenta)
+* Connected the character embedding input to bidirectional_rnn layers.
+  * Takenized characters will be first encoded to GloVe embedding, and 
+  then the model takes the last hidden layer of bi-directional GRU unit.
+  
 03/10 (Yuji)
 * Moved loading GloVe model to `util.py`
   * If `load_pretrained=False`, should embedding matrix be
