@@ -18,4 +18,3 @@ a system to answer questions from the
 
 ## Model Architecture
 
-![R Net](analysis/R-Net.png)
