@@ -25,8 +25,8 @@ def encoding(word, char, word_embeddings, char_embeddings, scope='embedding'):
         return word_encoding, char_encoding
 
 
-def bidirectional_rnn(inputs, input_lengths, cell_type, num_units, num_layers, dropout_prob,
-                      output=True, train=True, scope='Bi_RNN'):
+def bidirectional_rnn(inputs, input_lengths, cell_type, num_units, num_layers, dropout_prob, is_training=True,
+                      scope='Bi_RNN'):
     """Bidirectional RNN.
 
     Args:
@@ -36,8 +36,7 @@ def bidirectional_rnn(inputs, input_lengths, cell_type, num_units, num_layers, d
         num_units (int):        number of units in the RNN cell
         num_layers (int):       number of layers in the RNN
         dropout_prob (float):   probability of dropping a node during dropout
-        output (bool):          whether to return the output (True) or the hidden state (False)
-        train (bool):           whether the model is training or testing
+        is_training (bool):     whether the model is training or testing
         scope (str):            tensorflow variable scope
 
     Returns:
@@ -49,7 +48,7 @@ def bidirectional_rnn(inputs, input_lengths, cell_type, num_units, num_layers, d
 
         def rnn_cell():
             # only use dropout during training
-            keep_prob = 1 - dropout_prob if train else 1
+            keep_prob = 1 - dropout_prob if is_training else 1
             return DropoutWrapper(cell_type(num_units), output_keep_prob=keep_prob)
 
         if num_layers > 1:
@@ -60,10 +59,22 @@ def bidirectional_rnn(inputs, input_lengths, cell_type, num_units, num_layers, d
             cell_fw, cell_bw = rnn_cell(), rnn_cell()
 
         outputs, states = tf.nn.bidirectional_dynamic_rnn(cell_fw, cell_bw, inputs, input_lengths, dtype=tf.float64)
-        if output:
-            return tf.concat(outputs, axis=2)
-        else:
-            return tf.reshape(tf.concat(states, axis=1), (input_dims[0], input_dims[1], 2 * num_units))
+        return outputs, states
+
+
+def attention(inputs, bias=False, scope='attention'):
+    # TODO: check correctness; allow inputs to be concatenation of previous context vector
+    with tf.variable_scope(scope):
+        _, state_size, seq_len = inputs.get_shape().as_list()
+        w = tf.get_variable('W', initializer=tf.truncated_normal([None, state_size, state_size]))
+        v = tf.get_variable('v', initializer=tf.truncated_normal([None, state_size]))
+        activation = tf.matmul(v, w)
+        if bias:
+            b = tf.get_variable('b', initializer=tf.zeros([None, state_size]))
+            activation += b
+        s = tf.reduce_sum(tf.multiply(v, tf.tanh(activation)))
+        a = tf.nn.softmax(s)
+        return tf.multiply(a, inputs)
 
 
 def pointer_net(inputs):

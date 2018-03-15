@@ -91,3 +91,16 @@ Wikipedia into R-Net and ask "What is X"?)
 * Moved loading GloVe model to `util.py`
   * If `load_pretrained=False`, should embedding matrix be
   initialized to identity matrix? (i.e. one-hot encoding)
+
+03/15 (Yuji)
+* Added R-Net architecture diagram to README
+  * Some hyperparameters are ambiguous: number of layers in
+  self-matching network and gated attention-based GRU.
+  * Formula (11) in the paper contains a mystery parameter
+  V_r^Q.
+* Edited `layers.py`
+  * Return both final states and outputs in `bidirectional_rnn()`
+  function: selecting value to pass through network should 
+  be implemented in `model.py`
+  * Preliminary implementation of attention layer; likely 
+  needs revisions.
