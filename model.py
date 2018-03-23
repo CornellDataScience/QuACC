@@ -6,16 +6,16 @@ import tensorflow as tf
 from hyperparams import Hyperparams as Hp
 from layers import bidirectional_rnn
 from loader import tokenize, convert_to_ids
-from util import load_glove, embedding_matrix
+from util import glove_dict, embedding_matrix
 
 
 class Model:
     """Main model
 
     Attributes:
-        load_pretrained (bool):         if True, load the model at instantiation
+        load_glove (bool): if True, load the model at instantiation
     """
-    def __init__(self, load_pretrained=True, is_training=True):
+    def __init__(self, load_glove=True, is_training=True):
 
         # TODO: implement handling of character embeddings
         # char_glove = load_glove(Hp.glove_char) if load_pretrained else {}
@@ -25,7 +25,7 @@ class Model:
         # self.char_embeddings = tf.Variable(tf.constant(char_embeddings), trainable=True, name='char_embeddings')
 
         # load pre-trained GloVe dictionary; create embedding matrix
-        word_glove = load_glove(Hp.glove_word) if load_pretrained else {}
+        word_glove = glove_dict(Hp.glove_word) if load_glove else {}
         word_matrix = embedding_matrix(word_glove, 'word')
 
         # input placeholders (integer encoded sentences)
@@ -66,7 +66,7 @@ if __name__ == '__main__':
     # sample_pc = convert_to_ids(context, ttype='context', mode='character')
     sample_pw = convert_to_ids(paragraph, ttype='paragraph', mode='word')
 
-    QuACC = Model(load_pretrained=True)
+    QuACC = Model(load_glove=True)
 
     with tf.Session() as sess:
         init = tf.global_variables_initializer()
