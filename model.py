@@ -17,6 +17,7 @@ class Model:
     """
     def __init__(self, batch_size=None, load_glove=True, is_training=True):
 
+        # if batch size is not specified, default to value in hyperparams.py
         self.batch_size = batch_size or Hp.batch_size
 
         # TODO: implement handling of character embedding
@@ -37,14 +38,14 @@ class Model:
         # create tensor for word embedding matrix, lookup GloVe embeddings of inputs
         with tf.variable_scope('initial_embeddings'):
             self.word_matrix = tf.Variable(tf.constant(word_matrix), trainable=False, name='word_matrix')
-            self.q_word_embeds = tf.nn.embedding_lookup(self.word_matrix, self.q_word_inputs, name='q_word_embeds')
             self.p_word_embeds = tf.nn.embedding_lookup(self.word_matrix, self.p_word_inputs, name='p_word_embeds')
+            self.q_word_embeds = tf.nn.embedding_lookup(self.word_matrix, self.q_word_inputs, name='q_word_embeds')
 
         # encode both paragraph & question using bi-directional RNN
         with tf.variable_scope('encodings'):
-            self.q_encodings = bidirectional_rnn(self.p_word_embeds, self.p_word_lengths, Hp.rnn1_cell, Hp.rnn1_units,
-                                                 Hp.rnn1_layers, Hp.rnn1_dropout, is_training)
             self.p_encodings = bidirectional_rnn(self.p_word_embeds, self.p_word_inputs, Hp.rnn1_cell, Hp.rnn1_units,
+                                                 Hp.rnn1_layers, Hp.rnn1_dropout, is_training)
+            self.q_encodings = bidirectional_rnn(self.p_word_embeds, self.p_word_lengths, Hp.rnn1_cell, Hp.rnn1_units,
                                                  Hp.rnn1_layers, Hp.rnn1_dropout, is_training)
 
         # create question-aware paragraph encoding using bi-directional RNN with attention
