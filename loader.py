@@ -4,7 +4,7 @@ Data loader with tf.train.batch class
 
 import numpy as np
 import spacy
-from hyperparams import Hyperparams
+from hyperparams import Hyperparams as Hp
 
 
 def tokenize(text, mode='character'):
@@ -29,17 +29,16 @@ def convert_to_ids(text, ttype='question', mode='character'):
     """return list of unique ids for the corresponding word or character in the input text
     Args:
         text (str):  string to vectorize
-        ttype (str): ??
+        ttype (str): either 'question' or 'paragraph'
         mode (str):  'character' or 'word'. Change the scope of tokenization
     Returns:
         array of unique ids for the corresponding characters or words
     """
     assert mode in {'character', 'word'}, "Select 'word' or 'character'"
-    assert ttype in {'question', 'context'}, "Select 'question' or 'context'"
-    lookup = Hyperparams.char2id if mode == 'character' else Hyperparams.word2id
+    assert ttype in {'question', 'paragraph'}, "Select 'question' or 'paragraph'"
+    lookup = Hp.char2id if mode == 'character' else Hp.word2id
 
-    option = [Hyperparams.max_question_c, Hyperparams.max_question_w] if ttype == 'question' else \
-        [Hyperparams.max_paragraph_c, Hyperparams.max_paragraph_w]
+    option = [Hp.max_q_chars, Hp.max_q_words] if ttype == 'question' else [Hp.max_p_chars, Hp.max_p_words]
     max_len = option[0] if mode == 'character' else option[1]
     
     tokenized = tokenize(text, mode)
