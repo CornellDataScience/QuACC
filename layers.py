@@ -77,8 +77,21 @@ def attention(inputs, bias=False, scope='attention'):
         return tf.multiply(a, inputs)
 
 
-def pointer_net(inputs):
-    pass
+def pointer_net(inputs, cell_type, num_pointers, num_units, initial_state=None):
+    """Implementation of a pointer network as described in https://arxiv.org/abs/1506.03134
+
+    Args:
+        inputs (tensor):        input tensor of shape [batch_size, max_time, size]
+        cell_type (method):     type of RNN cell (e.g. tf.contrib.rnn.GRUCell)
+        num_pointers (int):     number of pointers to return
+        num_units (int):        number of units in the hidden RNN cell
+        initial_state (tensor): tensor to use as initial hidden state of decoder RNN
+    Returns:
+
+    """
+    batch_size, max_time, size = inputs.get_shape().as_list()
+    if initial_state is None:
+        initial_state = tf.zeros([batch_size, num_units])
 
 
 def cnn_embedding(inputs):
