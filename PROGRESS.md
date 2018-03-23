@@ -104,3 +104,14 @@ Wikipedia into R-Net and ask "What is X"?)
   be implemented in `model.py`
   * Preliminary implementation of attention layer; likely 
   needs revisions.
+  
+03/22 (Kenta)
+* Generated complete dictionaries for all context paragraphs
+  * Edited `process.py`
+* Connected initial layers for both questions and passages
+  * Edited `model.py`
+ 
+03/23 (Kenta, Yuji)
+* Started implementing attention matching
+  * Discovered an error in the original paper and previous implementations of RNet
+  * Came up with a potential solution
