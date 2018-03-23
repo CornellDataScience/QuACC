@@ -56,9 +56,9 @@ if __name__ == '__main__':
 
     question = 'What is in front of the Notre Dame Main Building?'
     paragraph = 'Architecturally, the school has a Catholic character. Atop the Main Building\'s \
-        gold dome is a golden statue of the Virgin Mary. Immediately in front of the Main \
-        Building and facing it, is a copper statue of Christ with arms upraised with the \
-        legend "Venite Ad Me Omnes". Next to the Main Building is the Basilica of the Sacred Heart.'
+    gold dome is a golden statue of the Virgin Mary. Immediately in front of the Main \
+    Building and facing it, is a copper statue of Christ with arms upraised with the \
+    legend "Venite Ad Me Omnes". Next to the Main Building is the Basilica of the Sacred Heart.'
 
     # sample_qc = convert_to_ids(question, ttype='question', mode='character')
     sample_qw = convert_to_ids(question, ttype='question', mode='word')
