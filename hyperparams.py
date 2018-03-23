@@ -21,9 +21,9 @@ class Hyperparams:
 
     # architecture
     emb_size = 300
-    rnn1_cell_type = tf.contrib.rnn.GRUCell
-    rnn1_num_layers = 3
-    rnn1_num_units = 80
+    rnn1_cell = tf.contrib.rnn.GRUCell
+    rnn1_layers = 3
+    rnn1_units = 80
     rnn1_dropout = 0.2
 
     # SQuAD related info
@@ -41,9 +41,9 @@ class Hyperparams:
     char_vocab_size = len(char2id)
 
     # input size
-    max_question_c = 80
-    max_question_w = 30
+    max_q_chars = 80
+    max_q_words = 30
 
     # input size
-    max_paragraph_c = 1000
-    max_paragraph_w = 500
+    max_p_chars = 1000
+    max_p_words = 500
