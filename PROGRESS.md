@@ -114,4 +114,6 @@ Wikipedia into R-Net and ask "What is X"?)
 03/23 (Kenta, Yuji)
 * Started implementing attention matching
   * Discovered an error in the original paper and previous implementations of RNet
-  * Came up with a potential solution
+  * Came up with a potential solution:
+    * Interpret "final state" of bidirectional RNN in character
+    embedding as final hidden state at last character of word.
