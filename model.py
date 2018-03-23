@@ -30,13 +30,13 @@ class Model:
 
         # input placeholders (integer encoded sentences)
         with tf.variable_scope('inputs'):
-            self.p_word_inputs = tf.placeholder(tf.int32, [None, Hp.max_p_words], 'p_words')
-            self.q_word_inputs = tf.placeholder(tf.int32, [None, Hp.max_q_words], 'q_words')
+            self.p_word_inputs = tf.placeholder(tf.int32, [Hp.batch_size, Hp.max_p_words], 'p_words')
+            self.q_word_inputs = tf.placeholder(tf.int32, [Hp.batch_size, Hp.max_q_words], 'q_words')
 
         # input length placeholders (actual non-padded length of each sequence in batch; dictates length of unrolling)
         with tf.variable_scope('seq_lengths'):
-            self.p_word_lengths = tf.placeholder(tf.int32, [None], 'p_words')
-            self.q_word_lengths = tf.placeholder(tf.int32, [None], 'q_words')
+            self.p_word_lengths = tf.placeholder(tf.int32, [Hp.batch_size], 'p_words')
+            self.q_word_lengths = tf.placeholder(tf.int32, [Hp.batch_size], 'q_words')
 
         # create tensor for word embedding matrix, lookup GloVe embeddings of inputs
         with tf.variable_scope('initial_embeddings'):
@@ -64,7 +64,7 @@ if __name__ == '__main__':
     sample_qw = convert_to_ids(question, ttype='question', mode='word')
 
     # sample_pc = convert_to_ids(context, ttype='context', mode='character')
-    sample_pw = convert_to_ids(paragraph, ttype='context', mode='word')
+    sample_pw = convert_to_ids(paragraph, ttype='paragraph', mode='word')
 
     QuACC = Model(load_pretrained=True)
 
