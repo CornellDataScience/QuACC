@@ -68,7 +68,7 @@ def attention(inputs, bias=False, scope='attention'):
         _, state_size, seq_len = inputs.get_shape().as_list()
         w = tf.get_variable('W', initializer=tf.truncated_normal([None, state_size, state_size]))
         v = tf.get_variable('v', initializer=tf.truncated_normal([None, state_size]))
-        activation = tf.matmul(v, w)
+        activation = tf.matmul(inputs, w)
         if bias:
             b = tf.get_variable('b', initializer=tf.zeros([None, state_size]))
             activation += b
