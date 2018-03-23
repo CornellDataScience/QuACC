@@ -43,3 +43,7 @@ class Hyperparams:
     # input size
     max_question_c = 80
     max_question_w = 30
+
+    # input size
+    max_context_c = 1000
+    max_context_w = 500
