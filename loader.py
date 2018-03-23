@@ -25,11 +25,12 @@ def tokenize(text, mode='character'):
         return tokens
 
 
-def convert_to_ids(text, ttype = 'question', mode='character'):
+def convert_to_ids(text, ttype='question', mode='character'):
     """return list of unique ids for the corresponding word or character in the input text
     Args:
-        text (string): string to vectorize
-        mode (string): 'character' or 'word'. Change the scope of tokenization
+        text (str):  string to vectorize
+        ttype (str): ??
+        mode (str):  'character' or 'word'. Change the scope of tokenization
     Returns:
         array of unique ids for the corresponding characters or words
     """
@@ -37,8 +38,8 @@ def convert_to_ids(text, ttype = 'question', mode='character'):
     assert ttype in {'question', 'context'}, "Select 'question' or 'context'"
     lookup = Hyperparams.char2id if mode == 'character' else Hyperparams.word2id
 
-    option = [Hyperparams.max_question_c, Hyperparams.max_question_w] if ttype == 'question'\
-            else [Hyperparams.max_context_c, Hyperparams.max_context_w]
+    option = [Hyperparams.max_question_c, Hyperparams.max_question_w] if ttype == 'question' else \
+        [Hyperparams.max_paragraph_c, Hyperparams.max_paragraph_w]
     max_len = option[0] if mode == 'character' else option[1]
     
     tokenized = tokenize(text, mode)
