@@ -117,3 +117,10 @@ Wikipedia into R-Net and ask "What is X"?)
   * Came up with a potential solution:
     * Interpret "final state" of bidirectional RNN in character
     embedding as final hidden state at last character of word.
+
+03/24 (Kenta)
+* Created `cells.py` for the custom RNN cells
+  * TODO 1: Insert the attention layer (to be implemented by Yuji) between previous states and current inputs
+  * TODO 2: Implement GRU operation and wrap it around the attention layer
+  * TODO 3: Return hidden layers inside of the output tuple 
+* I was there when Yuji pulled off some tensor black magic
