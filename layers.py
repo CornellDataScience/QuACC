@@ -58,6 +58,36 @@ def bidirectional_rnn(inputs, input_lengths, cell_type, num_units, num_layers, d
     outputs, states = tf.nn.bidirectional_dynamic_rnn(cell_fw, cell_bw, inputs, input_lengths, dtype=tf.float64)
     return tf.concat(outputs, axis=2), states
 
+def attention(inputs, memory, input_lengths):
+    """attention layer.
+
+    Args:
+        inputs (tf.Tensor):        3-dimensional tensor of shape [batch_size, max_seq_length, dimension]
+        memory (tf.Tensor):        3-dimensional tensor of shape [batch_size, max_seq_length, dimension]
+        input_lengths (tf.Tensor): 1-dimensional tensor of length batch_size specifying actual length of each input
+    Returns:
+        tf.Tensor:                 attention matric of shape [batch_size, input_sequence, memory_sequence]
+    """
+    bi, n, d = inputs.get_shape().as_list()
+    b, m, d, = memory.get_shape().as_list()
+    assert bi == b, "Inputs and memory must have same batch size."
+
+    # trainable variables for attention decoder
+    memory_weights = tf.get_variable('wQ', shape=[d, attn_size], dtype=tf.float64)
+    input_weights = tf.get_variable('wP', shape=[d, attn_size], dtype=tf.float64)
+    attn_weights = tf.get_variable('v', shape=[attn_size], dtype=tf.float64)
+
+    # TODO: Account for varying length inputs? Does it matter if extra entries are zero-padded?
+    # compute attention matrix
+    weighted_inputs = tf.tensordot(inputs, input_weights, axes=[[2], [0]])
+    weighted_memory = tf.tensordot(memory, memory_weights, axes=[[2], [0]])
+    tiled_inputs = tf.tile(tf.expand_dims(weighted_inputs, axis=2), [1, 1, m, 1])
+    tiled_memory = tf.tile(tf.expand_dims(weighted_memory, axis=1), [1, n, 1, 1])
+    attn_matrix = tf.tensordot(tf.tanh(tiled_inputs + tiled_memory), attn_weights, axes=[[3], [0]])
+    attn_matrix = tf.nn.softmax(attn_matrix, axis=2)
+    assert [b, n, m] == attn_matrix.get_shape().as_list(), "Attention matrix must have shape [batch, n, m]."
+
+    return attn_matrix
 
 def attention_decoder(inputs, memory, input_lengths, initial_state, cell_type, num_units, num_layers, attn_size,
                       dropout_prob, is_training=True):

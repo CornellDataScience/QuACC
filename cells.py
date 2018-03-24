@@ -4,7 +4,7 @@ Custom RNNCell Class
 
 from tensorflow.contrib.rnn import RNNCell
 from tensorflow.python.ops import math_ops
-
+from layers import attention
 
 class GatedAttentionCell(RNNCell):
     """Gated Attention cell
