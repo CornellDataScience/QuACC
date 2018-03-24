@@ -43,11 +43,11 @@ class Model:
 
         # encode both paragraph & question using bi-directional RNN
         with tf.variable_scope('p_encodings'):
-            self.p_encodings = bidirectional_rnn(self.p_word_embeds, self.p_word_lengths, Hp.rnn1_cell, Hp.rnn1_units,
-                                                 Hp.rnn1_layers, Hp.rnn1_dropout, is_training)
+            self.p_encodings, states = bidirectional_rnn(self.p_word_embeds, self.p_word_lengths, Hp.rnn1_cell,
+                                                         Hp.rnn1_units, Hp.rnn1_layers, Hp.rnn1_dropout, is_training)
         with tf.variable_scope('q_encodings'):
-            self.q_encodings = bidirectional_rnn(self.q_word_embeds, self.q_word_lengths, Hp.rnn1_cell, Hp.rnn1_units,
-                                                 Hp.rnn1_layers, Hp.rnn1_dropout, is_training)
+            self.q_encodings, _ = bidirectional_rnn(self.q_word_embeds, self.q_word_lengths, Hp.rnn1_cell,
+                                                    Hp.rnn1_units, Hp.rnn1_layers, Hp.rnn1_dropout, is_training)
 
         # create question-aware paragraph encoding using bi-directional RNN with attention
         with tf.variable_scope('q_aware_encoding'):
@@ -93,8 +93,7 @@ if __name__ == '__main__':
     # sample_pc = convert_to_ids(paragraph, ttype='paragraph', mode='character')
     # sample_qc = convert_to_ids(question, ttype='question', mode='character')
 
-
-    QuACC = Model(batch_size=1, load_glove=False, is_training=False)
+    QuACC = Model(batch_size=1, load_glove=True, is_training=False)
 
     with tf.Session() as sess:
         init = tf.global_variables_initializer()
