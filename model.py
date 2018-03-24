@@ -3,90 +3,107 @@ Main model.
 """
 
 import tensorflow as tf
-from hyperparams import Hyperparams
-from layers import encoding, bidirectional_rnn
-from loader import tokenize, convert_to_ids
-from util import load_glove, embedding_matrix
+from hyperparams import Hyperparams as Hp
+from layers import bidirectional_rnn
+from loader import convert_to_ids
+from util import glove_dict, embedding_matrix
 
 
-class Model(object):
+class Model:
     """Main model
 
     Attributes:
-        load_pretrained (bool):         if True, load the model at instantiation
-        char_embeddings (tf.Variable):  mxn matrix that contains character embedding
-                                        each row represents character token, each column represents embedded dimension
-        word_embeddings (tf.Variable):  mxn matrix that contains word embedding
-                                        each row represents one word, each column represents embedded dimension
-        q_input_char (tf.placeholder):  placeholder for a question converted to character ids
-        q_input_word (tf.placeholder):  placeholder for a question converted to word ids
-        q_encoded_char (tensor):        a tensor after encoding the input characters to GloVe embedding
-        q_encoded_word (tensor):        a tensor after encoding the input words to GloVe embedding
+        load_glove (bool): if True, load the model at instantiation
     """
-    def __init__(self, load_pretrained=True):
+    def __init__(self, batch_size=None, load_glove=True, is_training=True):
 
-        char_glove = load_glove(Hyperparams.glove_char) if load_pretrained else {}
-        word_glove = load_glove(Hyperparams.glove_word) if load_pretrained else {}
-        char_embeddings = embedding_matrix(char_glove, 'character')
-        word_embeddings = embedding_matrix(word_glove, 'word')
+        # if batch size is not specified, default to value in hyperparams.py
+        self.batch_size = batch_size or Hp.batch_size
 
-        # create tensor for word & character embeddings
-        self.char_embeddings = tf.Variable(tf.constant(char_embeddings), trainable=True, name='char_embeddings')
-        self.word_embeddings = tf.Variable(tf.constant(word_embeddings), trainable=False, name='word_embeddings')
+        # TODO: implement handling of character embedding
+        # load pre-trained GloVe dictionary; create embedding matrix
+        word_glove = glove_dict(Hp.glove_word) if load_glove else {}
+        word_matrix = embedding_matrix(word_glove, 'word')
 
-        # input placeholders
-        self.q_input_char = tf.placeholder(tf.int32, [None, Hyperparams.max_question_c], 'question_c')
-        self.q_input_word = tf.placeholder(tf.int32, [None, Hyperparams.max_question_w], 'question_w')
+        # input placeholders (integer encoded sentences)
+        with tf.variable_scope('inputs'):
+            self.p_word_inputs = tf.placeholder(tf.int32, [self.batch_size, Hp.max_p_words], 'p_words')
+            self.q_word_inputs = tf.placeholder(tf.int32, [self.batch_size, Hp.max_q_words], 'q_words')
 
-        self.c_input_char = tf.placeholder(tf.int32, [None, Hyperparams.max_context_c], 'context_c')
-        self.c_input_word = tf.placeholder(tf.int32, [None, Hyperparams.max_context_w], 'context_w')
+        # input length placeholders (actual non-padded length of each sequence in batch; dictates length of unrolling)
+        with tf.variable_scope('seq_lengths'):
+            self.p_word_lengths = tf.placeholder(tf.int32, [self.batch_size], 'p_words')
+            self.q_word_lengths = tf.placeholder(tf.int32, [self.batch_size], 'q_words')
 
-        # encode the words using glove
-        self.q_encoded_word, q_encoded_char = \
-            encoding(self.q_input_word, self.q_input_char, self.word_embeddings, self.char_embeddings)
+        # create tensor for word embedding matrix, lookup GloVe embeddings of inputs
+        with tf.variable_scope('initial_embeddings'):
+            self.word_matrix = tf.Variable(tf.constant(word_matrix), trainable=False, name='word_matrix')
+            self.p_word_embeds = tf.nn.embedding_lookup(self.word_matrix, self.p_word_inputs, name='p_word_embeds')
+            self.q_word_embeds = tf.nn.embedding_lookup(self.word_matrix, self.q_word_inputs, name='q_word_embeds')
 
-        # encode the words using glove
-        self.c_encoded_word, c_encoded_char = \
-            encoding(self.c_input_word, self.c_input_char, self.word_embeddings, self.char_embeddings)
+        # encode both paragraph & question using bi-directional RNN
+        with tf.variable_scope('p_encodings'):
+            self.p_encodings = bidirectional_rnn(self.p_word_embeds, self.p_word_lengths, Hp.rnn1_cell, Hp.rnn1_units,
+                                                 Hp.rnn1_layers, Hp.rnn1_dropout, is_training)
+        with tf.variable_scope('q_encodings'):
+            self.q_encodings = bidirectional_rnn(self.q_word_embeds, self.q_word_lengths, Hp.rnn1_cell, Hp.rnn1_units,
+                                                 Hp.rnn1_layers, Hp.rnn1_dropout, is_training)
 
-        # store the final layer of bidirectional GRU as character embedding
-        self.q_encoded_char = bidirectional_rnn(q_encoded_char, [Hyperparams.max_question_c],
-                                                Hyperparams.rnn1_cell_type,  Hyperparams.rnn1_num_units,
-                                                Hyperparams.rnn1_num_layers, Hyperparams.rnn1_dropout,
-                                                scope = 'Q_char_embed')
+        # create question-aware paragraph encoding using bi-directional RNN with attention
+        with tf.variable_scope('q_aware_encoding'):
+            pass
 
-        # store the final layer of bidirectional GRU as character embedding
-        self.c_encoded_char = bidirectional_rnn(c_encoded_char, [Hyperparams.max_context_c],
-                                                Hyperparams.rnn1_cell_type,  Hyperparams.rnn1_num_units,
-                                                Hyperparams.rnn1_num_layers, Hyperparams.rnn1_dropout,
-                                                scope = 'C_char_embed')
+        # create paragraph encoding with self-matching attention
+        with tf.variable_scope('self_matching'):
+            pass
+
+        # find pointers (in paragraph) to beginning and end of answer to question
+        with tf.variable_scope('pointer_net'):
+            self.pointers = None
+
+        # loss functions & optimization:
+        with tf.variable_scope('loss'):
+            self.labels = tf.placeholder(tf.int32, [self.batch_size, 2], 'labels')
+            # TODO: implement negative log-likelihood of true label given predicted distribution
+            self.neg_log_likelihood = None
+            # TODO: implement selection of optimizer, gradient clipping (?)
+            self.train_step = tf.train.AdamOptimizer(Hp.learning_rate).minimize(self.neg_log_likelihood)
+
+        # compute accuracy metrics
+        with tf.variable_scope('metrics'):
+            # TODO: for any P/Q pair, there may be multiple correct answers
+            # exact match score (percentage of P/Q pairs where both start & end pointers match)
+            match_any = tf.equal(tf.argmax(self.pointers, axis=1, output_type=tf.int32), self.labels)
+            match_all = tf.cast(tf.equal(tf.reduce_sum(tf.cast(match_any, tf.int32), axis=1), 2), tf.float64)
+            self.exact_match = tf.reduce_mean(match_all)
+            # TODO: implement F1 score
 
 
 if __name__ == '__main__':
+
     question = 'What is in front of the Notre Dame Main Building?'
-    context = 'Architecturally, the school has a Catholic character. Atop the Main Building\'s \
+    paragraph = 'Architecturally, the school has a Catholic character. Atop the Main Building\'s \
     gold dome is a golden statue of the Virgin Mary. Immediately in front of the Main \
     Building and facing it, is a copper statue of Christ with arms upraised with the \
     legend "Venite Ad Me Omnes". Next to the Main Building is the Basilica of the Sacred Heart.'
 
-    sample_qc = convert_to_ids(question, ttype = 'question', mode='character')
-    sample_qw = convert_to_ids(question, ttype = 'question', mode='word')
+    sample_pw = convert_to_ids(paragraph, ttype='paragraph', mode='word')
+    sample_qw = convert_to_ids(question, ttype='question', mode='word')
 
-    sample_cc = convert_to_ids(context, ttype = 'context', mode='character')
-    sample_cw = convert_to_ids(context, ttype = 'context', mode='word')
+    # sample_pc = convert_to_ids(paragraph, ttype='paragraph', mode='character')
+    # sample_qc = convert_to_ids(question, ttype='question', mode='character')
 
-    QuACC = Model(load_pretrained=False)
+
+    QuACC = Model(batch_size=1, load_glove=True, is_training=False)
 
     with tf.Session() as sess:
         init = tf.global_variables_initializer()
         sess.run(init)
         feed_dict = {
-            QuACC.q_input_char: sample_qc.reshape(1, -1),
-            QuACC.q_input_word: sample_qw.reshape(1, -1),
-            QuACC.c_input_char: sample_cc.reshape(1, -1),
-            QuACC.c_input_word: sample_cw.reshape(1, -1),
+            QuACC.p_word_inputs: sample_pw.reshape(1, -1),
+            QuACC.q_word_inputs: sample_qw.reshape(1, -1)
         }
-        index = sess.run([QuACC.q_encoded_char, QuACC.c_encoded_char], feed_dict=feed_dict)
+        index = sess.run([QuACC.q_word_embeds, QuACC.p_word_embeds], feed_dict=feed_dict)
 
         print(index[0][1].shape)  # 1 x 80 x (2 x char len)
         # print(index[0][1].shape)  # 1 x 80 x (2 x char len)

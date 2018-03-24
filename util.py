@@ -6,7 +6,7 @@ import numpy as np
 from hyperparams import Hyperparams
 
 
-def load_glove(directory):
+def glove_dict(directory):
     """Load glove model.
 
     Args:
@@ -34,12 +34,12 @@ def embedding_matrix(embedding_vectors, mode):
     Returns:
         np.ndarray:               embedding matrix
     """
+    # TODO: implementation does not match use case
+    assert mode in {'character', 'word'}, "Invalid mode."
     if mode == 'character':
         key2id = Hyperparams.char2id
     elif mode == 'word':
         key2id = Hyperparams.word2id
-    else:
-        return
 
     embedding = np.zeros((len(key2id) + 1, Hyperparams.emb_size))  # extra row for unknown tokens
     for key, i in key2id.items():
