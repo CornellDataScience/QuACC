@@ -94,7 +94,7 @@ if __name__ == '__main__':
     # sample_qc = convert_to_ids(question, ttype='question', mode='character')
 
 
-    QuACC = Model(batch_size=1, load_glove=True, is_training=False)
+    QuACC = Model(batch_size=1, load_glove=False, is_training=False)
 
     with tf.Session() as sess:
         init = tf.global_variables_initializer()
