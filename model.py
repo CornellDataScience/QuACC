@@ -43,7 +43,7 @@ class Model:
 
         # encode both paragraph & question using bi-directional RNN
         with tf.variable_scope('encodings'):
-            self.p_encodings = bidirectional_rnn(self.p_word_embeds, self.p_word_inputs, Hp.rnn1_cell, Hp.rnn1_units,
+            self.p_encodings = bidirectional_rnn(self.p_word_embeds, self.p_word_lengths, Hp.rnn1_cell, Hp.rnn1_units,
                                                  Hp.rnn1_layers, Hp.rnn1_dropout, is_training)
             self.q_encodings = bidirectional_rnn(self.p_word_embeds, self.p_word_lengths, Hp.rnn1_cell, Hp.rnn1_units,
                                                  Hp.rnn1_layers, Hp.rnn1_dropout, is_training)
