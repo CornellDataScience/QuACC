@@ -4,7 +4,7 @@ Main model.
 
 import tensorflow as tf
 from hyperparams import Hyperparams as Hp
-from layers import bidirectional_rnn
+from layers import attention_decoder, bidirectional_rnn, pointer_net
 from loader import convert_to_ids
 from util import glove_dict, embedding_matrix
 
@@ -51,15 +51,19 @@ class Model:
 
         # create question-aware paragraph encoding using bi-directional RNN with attention
         with tf.variable_scope('q_aware_encoding'):
-            pass
+            self.pq_encoding, states = attention_decoder(self.p_encodings, self.q_encodings, self.p_word_lengths,
+                                                         states, Hp.rnn2_cell, Hp.rnn2_units, Hp.rnn2_layers,
+                                                         Hp.rnn2_attn_size, Hp.rnn2_dropout, is_training)
 
         # create paragraph encoding with self-matching attention
         with tf.variable_scope('self_matching'):
-            pass
+            self.p_matched, _ = attention_decoder(self.pq_encoding, self.pq_encoding, self.p_word_lengths, states,
+                                                  Hp.rnn3_cell, Hp.rnn3_units, Hp.rnn3_units, Hp.rnn3_layers,
+                                                  Hp.rnn3_dropout, is_training)
 
         # find pointers (in paragraph) to beginning and end of answer to question
         with tf.variable_scope('pointer_net'):
-            self.pointers = None
+            self.pointers = pointer_net(self.p_matched)
 
         # loss functions & optimization:
         with tf.variable_scope('loss'):

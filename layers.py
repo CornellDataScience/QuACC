@@ -61,16 +61,33 @@ def bidirectional_rnn(inputs, input_lengths, cell_type, num_units, num_layers, d
 
 def attention_decoder(inputs, memory, input_lengths, initial_state, cell_type, num_units, num_layers, attn_size,
                       dropout_prob, is_training=True):
+    """RNN decoder with attention.
 
+    Args:
+        inputs (tf.Tensor):        3-dimensional tensor of shape [batch_size, max_seq_length, dimension]
+        memory (tf.Tensor):        3-dimensional tensor of shape [batch_size, max_seq_length, dimension]
+        input_lengths (tf.Tensor): 1-dimensional tensor of length batch_size specifying actual length of each input
+        initial_state (tuple):     tuple of initial states
+        cell_type (method):        type of RNN cell (e.g. tf.contrib.rnn.GRUCell)
+        num_units (int):           number of units in RNN cell
+        num_layers (int):          number of layers in RNN
+        attn_size (int):           hidden size used to compute attention scores
+        dropout_prob (float):      probability of dropping a node during dropout
+        is_training (bool):        whether the model is training or testing
+    Returns:
+        tf.Tensor:                 output of RNN
+        tf.Tensor:                 final hidden state of RNN
+    """
     bi, n, d = inputs.get_shape().as_list()
     b, m, d, = memory.get_shape().as_list()
     assert bi == b, "Inputs and memory must have same batch size."
 
     # trainable variables for attention decoder
-    input_weights = tf.get_variable('wQ', shape=[b, attn_size])
-    memory_weights = tf.get_variable('wP', shape=[b, attn_size])
+    memory_weights = tf.get_variable('wQ', shape=[b, attn_size])
+    input_weights = tf.get_variable('wP', shape=[b, attn_size])
     attn_weights = tf.get_variable('v', shape=[attn_size])
 
+    # TODO: Account for varying length inputs? Does it matter if extra entries are zero-padded?
     # compute attention matrix
     weighted_inputs = tf.tensordot(inputs, input_weights, axes=[[2], [0]])
     weighted_memory = tf.tensordot(memory, memory_weights, axes=[[2], [0]])
@@ -90,4 +107,9 @@ def attention_decoder(inputs, memory, input_lengths, initial_state, cell_type, n
         return DropoutWrapper(cell_type(num_units), output_keep_prob=keep_prob)
 
     decoder_cell = MultiRNNCell([rnn_cell() for _ in range(num_layers)]) if num_layers > 1 else rnn_cell()
+    outputs, states = tf.nn.dynamic_rnn(decoder_cell, rnn_inputs, input_lengths, initial_state)
+    return outputs, states
 
+
+def pointer_net(inputs):
+    pass
