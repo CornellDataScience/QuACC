@@ -123,4 +123,4 @@ Wikipedia into R-Net and ask "What is X"?)
   * TODO 1: Insert the attention layer (to be implemented by Yuji) between previous states and current inputs
   * TODO 2: Implement GRU operation and wrap it around the attention layer
   * TODO 3: Return hidden layers inside of the output tuple 
-* I was there when Yuji pulled off some tensor black magics
+* I was there when Yuji pulled off some tensor black magic
