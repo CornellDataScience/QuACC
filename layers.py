@@ -43,13 +43,13 @@ def bidirectional_rnn(inputs, input_lengths, cell_type, num_units, num_layers, d
     input_dims = inputs.get_shape().as_list()
     assert len(input_dims) == 3, "Input tensor must be 3-dimensional."
 
+    # instantiate RNN cell; only use dropout during training
     def rnn_cell():
-        # only use dropout during training
         keep_prob = 1 - dropout_prob if is_training else 1
         return DropoutWrapper(cell_type(num_units), output_keep_prob=keep_prob)
 
+    # if there is more than one hidden layer, use MultiRNNCell
     if num_layers > 1:
-        # if there is more than one hidden layer, use MultiRNNCell
         cell_fw = MultiRNNCell([rnn_cell() for _ in range(num_layers)])
         cell_bw = MultiRNNCell([rnn_cell() for _ in range(num_layers)])
     else:
@@ -59,5 +59,35 @@ def bidirectional_rnn(inputs, input_lengths, cell_type, num_units, num_layers, d
     return tf.concat(outputs, axis=2), states
 
 
-def simple_attention(inputs, scope='attention'):
-    pass
+def attention_decoder(inputs, memory, input_lengths, initial_state, cell_type, num_units, num_layers, attn_size,
+                      dropout_prob, is_training=True):
+
+    bi, n, d = inputs.get_shape().as_list()
+    b, m, d, = memory.get_shape().as_list()
+    assert bi == b, "Inputs and memory must have same batch size."
+
+    # trainable variables for attention decoder
+    input_weights = tf.get_variable('wQ', shape=[b, attn_size])
+    memory_weights = tf.get_variable('wP', shape=[b, attn_size])
+    attn_weights = tf.get_variable('v', shape=[attn_size])
+
+    # compute attention matrix
+    weighted_inputs = tf.tensordot(inputs, input_weights, axes=[[2], [0]])
+    weighted_memory = tf.tensordot(memory, memory_weights, axes=[[2], [0]])
+    tiled_inputs = tf.tile(tf.expand_dims(weighted_inputs, axis=2), [1, 1, m, 1])
+    tiled_memory = tf.tile(tf.expand_dims(weighted_memory, axis=1), [1, n, 1, 1])
+    attn_matrix = tf.tensordot(tf.tanh(tiled_inputs + tiled_memory), attn_weights, axes=[[3], [0]])
+    attn_matrix = tf.nn.softmax(attn_matrix, axis=2)
+    assert [b, n, m] == attn_matrix.get_shape().as_list(), "Attention matrix must have shape [batch, n, m]."
+
+    # inputs to RNN are original inputs concatenated with context vector
+    context_vector = None
+    rnn_inputs = tf.concat((inputs, context_vector), axis=2)
+
+    # instantiate RNN cell; only use dropout during training
+    def rnn_cell():
+        keep_prob = 1 - dropout_prob if is_training else 1
+        return DropoutWrapper(cell_type(num_units), output_keep_prob=keep_prob)
+
+    decoder_cell = MultiRNNCell([rnn_cell() for _ in range(num_layers)]) if num_layers > 1 else rnn_cell()
+

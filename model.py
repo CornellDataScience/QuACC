@@ -93,7 +93,6 @@ if __name__ == '__main__':
     # sample_pc = convert_to_ids(paragraph, ttype='paragraph', mode='character')
     # sample_qc = convert_to_ids(question, ttype='question', mode='character')
 
-
     QuACC = Model(batch_size=1, load_glove=True, is_training=False)
 
     with tf.Session() as sess:
