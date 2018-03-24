@@ -98,7 +98,8 @@ def attention_decoder(inputs, memory, input_lengths, initial_state, cell_type, n
     assert [b, n, m] == attn_matrix.get_shape().as_list(), "Attention matrix must have shape [batch, n, m]."
 
     # inputs to RNN are original inputs concatenated with context vector
-    context_vector = None
+    # TODO: check correctness of context vector
+    context_vector = tf.reduce_sum(tf.tensordot(attn_matrix, memory, axes=[[2], [1]]), axis=2)
     rnn_inputs = tf.concat((inputs, context_vector), axis=2)
 
     # instantiate RNN cell; only use dropout during training
