@@ -75,7 +75,7 @@ if __name__ == '__main__':
     sample_cc = convert_to_ids(context, ttype = 'context', mode='character')
     sample_cw = convert_to_ids(context, ttype = 'context', mode='word')
 
-    QuACC = Model(load_pretrained=True)
+    QuACC = Model(load_pretrained=False)
 
     with tf.Session() as sess:
         init = tf.global_variables_initializer()
@@ -88,5 +88,5 @@ if __name__ == '__main__':
         }
         index = sess.run([QuACC.q_encoded_char, QuACC.c_encoded_char], feed_dict=feed_dict)
 
-        print(index[0])  # 1 x 80 x (2 x char len)
-        print(index[1])  # 1 x 80 x (2 x char len)
+        print(index[0][1].shape)  # 1 x 80 x (2 x char len)
+        # print(index[0][1].shape)  # 1 x 80 x (2 x char len)
