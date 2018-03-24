@@ -83,9 +83,9 @@ def attention_decoder(inputs, memory, input_lengths, initial_state, cell_type, n
     assert bi == b, "Inputs and memory must have same batch size."
 
     # trainable variables for attention decoder
-    memory_weights = tf.get_variable('wQ', shape=[b, attn_size])
-    input_weights = tf.get_variable('wP', shape=[b, attn_size])
-    attn_weights = tf.get_variable('v', shape=[attn_size])
+    memory_weights = tf.get_variable('wQ', shape=[d, attn_size], dtype=tf.float64)
+    input_weights = tf.get_variable('wP', shape=[d, attn_size], dtype=tf.float64)
+    attn_weights = tf.get_variable('v', shape=[attn_size], dtype=tf.float64)
 
     # TODO: Account for varying length inputs? Does it matter if extra entries are zero-padded?
     # compute attention matrix

@@ -56,8 +56,9 @@ class Model:
                                                          Hp.rnn2_attn_size, Hp.rnn2_dropout, is_training)
 
         # create paragraph encoding with self-matching attention
+        # TODO: if decoder is uni-directional, which hidden state from BiRNN should be fed to initial state?
         with tf.variable_scope('self_matching'):
-            self.p_matched, _ = attention_decoder(self.pq_encoding, self.pq_encoding, self.p_word_lengths, states,
+            self.p_matched, _ = attention_decoder(self.pq_encoding, self.pq_encoding, self.p_word_lengths, states[0],
                                                   Hp.rnn3_cell, Hp.rnn3_units, Hp.rnn3_units, Hp.rnn3_layers,
                                                   Hp.rnn3_dropout, is_training)
 
