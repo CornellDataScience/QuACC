@@ -93,6 +93,7 @@ if __name__ == '__main__':
     # sample_pc = convert_to_ids(paragraph, ttype='paragraph', mode='character')
     # sample_qc = convert_to_ids(question, ttype='question', mode='character')
 
+
     QuACC = Model(batch_size=1, load_glove=True, is_training=False)
 
     with tf.Session() as sess:
@@ -104,5 +105,5 @@ if __name__ == '__main__':
         }
         index = sess.run([QuACC.q_word_embeds, QuACC.p_word_embeds], feed_dict=feed_dict)
 
-        print(index[0])  # 1 x 80 x (2 x char len)
-        print(index[1])  # 1 x 80 x (2 x char len)
+        print(index[0][1].shape)  # 1 x 80 x (2 x char len)
+        # print(index[0][1].shape)  # 1 x 80 x (2 x char len)
