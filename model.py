@@ -25,10 +25,11 @@ class Model:
         word_glove = glove_dict(Hp.glove_word) if load_glove else {}
         word_matrix = embedding_matrix(word_glove, 'word')
 
-        # input placeholders (integer encoded sentences)
+        # input placeholders (integer encoded sentences) & labels
         with tf.variable_scope('inputs'):
             self.p_word_inputs = tf.placeholder(tf.int32, [self.batch_size, Hp.max_p_words], 'p_words')
             self.q_word_inputs = tf.placeholder(tf.int32, [self.batch_size, Hp.max_q_words], 'q_words')
+            self.labels = tf.placeholder(tf.int32, [self.batch_size, 2], 'labels')
 
         # input length placeholders (actual non-padded length of each sequence in batch; dictates length of unrolling)
         with tf.variable_scope('seq_lengths'):
@@ -59,20 +60,19 @@ class Model:
         # TODO: if decoder is uni-directional, which hidden state from BiRNN should be fed to initial state?
         with tf.variable_scope('self_matching'):
             self.p_matched, _ = attention_decoder(self.pq_encoding, self.pq_encoding, self.p_word_lengths, states[0],
-                                                  Hp.rnn3_cell, Hp.rnn3_units, Hp.rnn3_units, Hp.rnn3_layers,
+                                                  Hp.rnn3_cell, Hp.rnn3_units, Hp.rnn3_layers, Hp.rnn3_attn_size,
                                                   Hp.rnn3_dropout, is_training)
 
         # find pointers (in paragraph) to beginning and end of answer to question
         with tf.variable_scope('pointer_net'):
-            self.pointers = pointer_net(self.p_matched)
+            self.q_pooling = None
+            self.pointers = pointer_net(self.p_matched, self.labels, self.q_pooling, Hp.ptr_units, Hp.ptr_layers,
+                                        Hp.ptr_dropout, is_training)
 
         # loss functions & optimization:
         with tf.variable_scope('loss'):
-            self.labels = tf.placeholder(tf.int32, [self.batch_size, 2], 'labels')
-            # TODO: implement negative log-likelihood of true label given predicted distribution
-            self.neg_log_likelihood = None
-            # TODO: implement selection of optimizer, gradient clipping (?)
-            self.train_step = tf.train.AdamOptimizer(Hp.learning_rate).minimize(self.neg_log_likelihood)
+            self.loss = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=self.labels, logits=self.pointers)
+            self.train_step = tf.train.AdamOptimizer(Hp.learning_rate).minimize(self.loss)
 
         # compute accuracy metrics
         with tf.variable_scope('metrics'):

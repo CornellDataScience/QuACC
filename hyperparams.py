@@ -40,6 +40,11 @@ class Hyperparams:
     rnn3_attn_size = 75
     rnn3_dropout = 0.2
 
+    ptr_cell = tf.contrib.rnn.GRUCell
+    ptr_layers = 1
+    ptr_units = 75
+    ptr_dropout = 0.2
+
     # SQuAD related info
     with open('./data/word2id-dict.pkl', 'rb') as f:
         word2id = pickle.load(f)

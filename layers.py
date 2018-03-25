@@ -2,8 +2,10 @@
 Layers of neural network architecture.
 """
 
+import numpy as np
 import tensorflow as tf
 from tensorflow.contrib.rnn import DropoutWrapper, MultiRNNCell
+from tensorflow.contrib.seq2seq import TrainingHelper, BasicDecoder, dynamic_decode
 
 
 def embedding(word, char, word_embeddings, char_embeddings, scope='embedding'):
@@ -70,7 +72,7 @@ def attention(inputs, memory, attn_size):
         tf.Tensor:                 attention matrix of shape [batch_size, input_sequence, memory_sequence]
     """
     bi, n, d = inputs.get_shape().as_list()
-    b, m, d, = memory.get_shape().as_list()
+    b, m, d = memory.get_shape().as_list()
     assert bi == b, "Inputs and memory must have same batch size."
 
     # trainable variables for attention decoder
@@ -127,5 +129,21 @@ def attention_decoder(inputs, memory, input_lengths, initial_state, cell_type, n
     return outputs, states
 
 
-def pointer_net(inputs):
-    pass
+def pointer_net(inputs, labels, initial_state, cell_type, num_units, num_layers, dropout_prob, is_training):
+    """Pointer network.
+
+    Args:
+    Returns:
+    """
+    batch = inputs.get_shape().as_list()[0]
+
+    # instantiate RNN cell; only use dropout during training
+    def rnn_cell():
+        keep_prob = 1 - dropout_prob if is_training else 1
+        return DropoutWrapper(cell_type(num_units), output_keep_prob=keep_prob)
+
+    decoder_cell = MultiRNNCell([rnn_cell() for _ in range(num_layers)]) if num_layers > 1 else rnn_cell()
+    helper = TrainingHelper(labels, tf.constant(np.full(batch, 2)), time_major=False)
+    decoder = BasicDecoder(decoder_cell, helper, initial_state)
+    outputs, _ = dynamic_decode(decoder)
+    return outputs
