@@ -5,7 +5,6 @@ Pre-process training data.
 import argparse
 import json
 import pandas as pd
-import pickle
 import os
 import spacy
 import sys
@@ -13,11 +12,11 @@ import time
 import loader
 
 
-def generate_dict(save = True):
+def generate_dict(save=True):
     # make sure the file exists
     assert ['raw_questions.csv'] not in os.listdir('data'), "Load Question Data First"
     assert ['raw_context.csv'] not in os.listdir('data'), "Load Context Data First"
-    # load datafram
+    # load dataframe
     rq = pd.read_csv('data/raw_questions.csv', index_col=False)
     rc = pd.read_csv('data/raw_context.csv', index_col=False)
     # array to text
@@ -34,21 +33,21 @@ def generate_dict(save = True):
     w.update(set(loader.tokenize(c_text, 'word')))
     # save
     if save:
-        char2id = {ch : i for i, ch in enumerate(c)}
-        id2char = {i : ch for i, ch in enumerate(c)}
-        word2id = {wd : i for i, wd in enumerate(w)}
-        id2word = {i : wd for i, wd in enumerate(w)}
-        with open('data/char2id-dict.pkl', 'wb') as d:
-            pickle.dump(char2id, d)
-        with open('data/id2char-dict.pkl', 'wb') as d:
-            pickle.dump(id2char, d)
-        with open('data/word2id-dict.pkl', 'wb') as d:
-            pickle.dump(word2id, d)
-        with open('data/id2word-dict.pkl', 'wb') as d:
-            pickle.dump(id2word, d)
+        char2id = {char: i for i, char in enumerate(c)}
+        id2char = {i: char for i, char in enumerate(c)}
+        word2id = {word: i for i, word in enumerate(w)}
+        id2word = {i: word for i, word in enumerate(w)}
+        with open('data/char2id.json', 'w') as file:
+            json.dump(char2id, file)
+        with open('data/id2char.json', 'w') as file:
+            json.dump(id2char, file)
+        with open('data/word2id.json', 'w') as file:
+            json.dump(word2id, file)
+        with open('data/id2word.json', 'w') as file:
+            json.dump(id2word, file)
 
 
-def process_context(data, save = True):
+def process_context(data, save=True):
     all_context = []
     for topic in data:
         article = topic['title']
@@ -60,6 +59,7 @@ def process_context(data, save = True):
     if save:
         dataframe.to_csv('data/raw_context.csv', index=False)
     return dataframe
+
 
 def process(data, save=True):
     all_questions = []
@@ -92,8 +92,8 @@ def tokenize(docs):
     t1 = time.time() - t0
     print('\nProcessed {} answers in {:.2f}s'.format(len(docs), t1))
 
-    with open('data/parsed_answers.pkl', 'wb') as f:
-        pickle.dump(parsed, f)
+    with open('data/parsed_answers.json', 'w') as file:
+        json.dump(parsed, file)
 
 
 def main(args):
@@ -110,7 +110,6 @@ def main(args):
         dataframe = pd.read_csv('data/raw_context.csv')
 
     generate_dict()
-
     # tokenize(dataframe.loc[:, 'Answer'].values)
 
 
