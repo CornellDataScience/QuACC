@@ -57,7 +57,7 @@ def process_context(data, save=True):
     headings = ['Topic', 'Paragraph #', 'Context']
     dataframe = pd.DataFrame(all_context, columns=headings)
     if save:
-        dataframe.to_csv('data/raw_context.csv', index=False)
+        dataframe.to_csv('data/raw_paragraphs.csv', index=False)
     return dataframe
 
 
@@ -107,7 +107,7 @@ def main(args):
     if 'raw_context.csv' not in os.listdir('data'):
         dataframe = process_context(data, save=True)
     else:
-        dataframe = pd.read_csv('data/raw_context.csv')
+        dataframe = pd.read_csv('data/raw_paragraphs.csv')
 
     generate_dict()
     # tokenize(dataframe.loc[:, 'Answer'].values)
