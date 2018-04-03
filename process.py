@@ -14,15 +14,15 @@ from loader import tokenize
 
 def generate_dict(save=True):
     # make sure the file exists
-    assert ['raw_questions.csv'] in os.listdir('data'), "Load Question Data First"
-    assert ['raw_context.csv'] in os.listdir('data'), "Load Context Data First"
+    assert 'raw_questions.csv' in os.listdir('data'), "Load Question Data First"
+    assert 'raw_context.csv' in os.listdir('data'), "Load Context Data First"
     # load dataframe
     rq = pd.read_csv('data/raw_questions.csv', index_col=False)
     rc = pd.read_csv('data/raw_context.csv', index_col=False)
     # array to text
-    a_text = ' '.join(rq['Answer'].values)
-    q_text = ' '.join(rq['Question'].values)
-    c_text = ' '.join(rc['Context'].values)
+    a_text = ' '.join(rq['Answer'].values.astype(str))
+    q_text = ' '.join(rq['Question'].values.astype(str))
+    c_text = ' '.join(rc['Context'].values.astype(str))
     # generate char dict
     c = set(tokenize(a_text, 'character'))
     c.update(set(tokenize(q_text, 'character')))
@@ -79,7 +79,7 @@ def process(data, save=True):
     return dataframe
 
 
-def tokenize(docs):
+def tokenize_spacy(docs):
     """Tokenize a list of documents using spacy."""
     nlp = spacy.load('en')
     t0 = time.time()
@@ -115,7 +115,7 @@ def main(args):
 
 def parse_args(argv):
     parser = argparse.ArgumentParser()
-    parser.add_argument('file', type=str, default='data/train-v1.1.json', help='path to SQuAD training data JSON file')
+    parser.add_argument('--file', type=str, default='data/train-v1.1.json', help='path to SQuAD data JSON file')
     return parser.parse_args(argv)
 
 
