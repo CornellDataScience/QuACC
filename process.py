@@ -9,13 +9,13 @@ import os
 import spacy
 import sys
 import time
-import loader
+from loader import tokenize
 
 
 def generate_dict(save=True):
     # make sure the file exists
-    assert ['raw_questions.csv'] not in os.listdir('data'), "Load Question Data First"
-    assert ['raw_context.csv'] not in os.listdir('data'), "Load Context Data First"
+    assert ['raw_questions.csv'] in os.listdir('data'), "Load Question Data First"
+    assert ['raw_context.csv'] in os.listdir('data'), "Load Context Data First"
     # load dataframe
     rq = pd.read_csv('data/raw_questions.csv', index_col=False)
     rc = pd.read_csv('data/raw_context.csv', index_col=False)
@@ -24,19 +24,19 @@ def generate_dict(save=True):
     q_text = ' '.join(rq['Question'].values)
     c_text = ' '.join(rc['Context'].values)
     # generate char dict
-    c = set(loader.tokenize(a_text, 'character'))
-    c.update(set(loader.tokenize(q_text, 'character')))
-    c.update(set(loader.tokenize(c_text, 'character')))
+    c = set(tokenize(a_text, 'character'))
+    c.update(set(tokenize(q_text, 'character')))
+    c.update(set(tokenize(c_text, 'character')))
     # generate word dict
-    w = set(loader.tokenize(a_text, 'word'))
-    w.update(set(loader.tokenize(q_text, 'word')))
-    w.update(set(loader.tokenize(c_text, 'word')))
+    w = set(tokenize(a_text, 'word'))
+    w.update(set(tokenize(q_text, 'word')))
+    w.update(set(tokenize(c_text, 'word')))
     # save
     if save:
-        char2id = {char: i for i, char in enumerate(c)}
-        id2char = {i: char for i, char in enumerate(c)}
-        word2id = {word: i for i, word in enumerate(w)}
-        id2word = {i: word for i, word in enumerate(w)}
+        char2id = {char: i+2 for i, char in enumerate(c)}
+        id2char = {i+2: char for i, char in enumerate(c)}
+        word2id = {word: i+2 for i, word in enumerate(w)}
+        id2word = {i+2: word for i, word in enumerate(w)}
         with open('data/char2id.json', 'w') as file:
             json.dump(char2id, file)
         with open('data/id2char.json', 'w') as file:
