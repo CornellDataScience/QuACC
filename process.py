@@ -99,12 +99,12 @@ def tokenize_spacy(docs):
 def main(args):
     with open(args.file, 'r') as file:
         data = json.load(file)['data']
-    if ['raw_questions.csv'] not in os.listdir('data'):
+    if 'raw_questions.csv' not in os.listdir('data'):
         dataframe = process(data, save=True)
     else:
         dataframe = pd.read_csv('data/raw_questions.csv')
 
-    if ['raw_context.csv'] not in os.listdir('data'):
+    if 'raw_context.csv' not in os.listdir('data'):
         dataframe = process_context(data, save=True)
     else:
         dataframe = pd.read_csv('data/raw_context.csv')
