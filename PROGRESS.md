@@ -124,3 +124,6 @@ Wikipedia into R-Net and ask "What is X"?)
   * TODO 2: Implement GRU operation and wrap it around the attention layer
   * TODO 3: Return hidden layers inside of the output tuple 
 * I was there when Yuji pulled off some tensor black magic
+
+04/02 (Yuji)
+* Integrated pointer net into QuACC
