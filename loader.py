@@ -74,6 +74,7 @@ def answer_pointers(answer, paragraph, ptr):
 class Loader(object):
     """Load & batch text data."""
     def __init__(self, batch_size, paragraphs=None, questions=None, save=True, load=False):
+        # TODO: implement saving/loading
         self.raw_paragraphs = paragraphs or pd.read_csv('./data/raw_paragraphs.csv')
         self.raw_questions = questions or pd.read_csv('./data/raw_questions.csv')
         self.batch_size = batch_size
