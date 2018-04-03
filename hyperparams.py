@@ -2,7 +2,7 @@
 All hyperparameters. Implemented as a class for convenience, but operates identically to an argument parser.
 """
 
-import pickle
+import json
 import tensorflow as tf
 
 
@@ -46,14 +46,14 @@ class Hyperparams:
     ptr_dropout = 0.2
 
     # SQuAD related info
-    with open('./data/word2id-dict.pkl', 'rb') as f:
-        word2id = pickle.load(f)
-    with open('./data/id2word-dict.pkl', 'rb') as f:
-        id2word = pickle.load(f)
-    with open('./data/char2id-dict.pkl', 'rb') as f:
-        char2id = pickle.load(f)
-    with open('./data/id2char-dict.pkl', 'rb') as f:
-        id2char = pickle.load(f)
+    with open('./data/word2id.json', 'r') as f:
+        word2id = json.load(f)
+    with open('./data/id2word.json', 'r') as f:
+        id2word = json.load(f)
+    with open('./data/char2id.json', 'r') as f:
+        char2id = json.load(f)
+    with open('./data/id2char.json', 'r') as f:
+        id2char = json.load(f)
 
     # vocabulary sizes
     word_vocab_size = len(word2id)
