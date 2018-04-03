@@ -50,37 +50,37 @@ class Model:
             self.q_encodings, _ = bidirectional_rnn(self.q_word_embeds, self.q_word_lengths, Hp.rnn1_cell,
                                                     Hp.rnn1_units, Hp.rnn1_layers, Hp.rnn1_dropout, is_training)
 
-        # create question-aware paragraph encoding using bi-directional RNN with attention
-        with tf.variable_scope('q_aware_encoding'):
-            self.pq_encoding, states = attention_decoder(self.p_encodings, self.q_encodings, self.p_word_lengths,
-                                                         states, Hp.rnn2_cell, Hp.rnn2_units, Hp.rnn2_layers,
-                                                         Hp.rnn2_attn_size, Hp.rnn2_dropout, is_training)
+        # # create question-aware paragraph encoding using bi-directional RNN with attention
+        # with tf.variable_scope('q_aware_encoding'):
+        #     self.pq_encoding, states = attention_decoder(self.p_encodings, self.q_encodings, self.p_word_lengths,
+        #                                                  states, Hp.rnn2_cell, Hp.rnn2_units, Hp.rnn2_layers,
+        #                                                  Hp.rnn2_attn_size, Hp.rnn2_dropout, is_training)
 
-        # create paragraph encoding with self-matching attention
-        # TODO: if decoder is uni-directional, which hidden state from BiRNN should be fed to initial state?
-        with tf.variable_scope('self_matching'):
-            self.p_matched, _ = attention_decoder(self.pq_encoding, self.pq_encoding, self.p_word_lengths, states[0],
-                                                  Hp.rnn3_cell, Hp.rnn3_units, Hp.rnn3_layers, Hp.rnn3_attn_size,
-                                                  Hp.rnn3_dropout, is_training)
-
-        # find pointers (in paragraph) to beginning and end of answer to question
-        with tf.variable_scope('pointer_net'):
-            self.q_pooling = None
-            self.pointers = pointer_net(self.p_matched, self.labels, self.q_pooling, Hp.ptr_units, Hp.ptr_layers,
-                                        Hp.ptr_dropout, is_training)
-
-        # loss functions & optimization:
-        with tf.variable_scope('loss'):
-            self.loss = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=self.labels, logits=self.pointers)
-            self.train_step = tf.train.AdamOptimizer(Hp.learning_rate).minimize(self.loss)
-
-        # compute accuracy metrics
-        with tf.variable_scope('metrics'):
-            # TODO: for any P/Q pair, there may be multiple correct answers
-            # exact match score (percentage of P/Q pairs where both start & end pointers match)
-            match_any = tf.equal(tf.argmax(self.pointers, axis=1, output_type=tf.int32), self.labels)
-            match_all = tf.cast(tf.equal(tf.reduce_sum(tf.cast(match_any, tf.int32), axis=1), 2), tf.float64)
-            self.exact_match = tf.reduce_mean(match_all)
+        # # create paragraph encoding with self-matching attention
+        # # TODO: if decoder is uni-directional, which hidden state from BiRNN should be fed to initial state?
+        # with tf.variable_scope('self_matching'):
+        #     self.p_matched, _ = attention_decoder(self.pq_encoding, self.pq_encoding, self.p_word_lengths, states[0],
+        #                                           Hp.rnn3_cell, Hp.rnn3_units, Hp.rnn3_layers, Hp.rnn3_attn_size,
+        #                                           Hp.rnn3_dropout, is_training)
+        #
+        # # find pointers (in paragraph) to beginning and end of answer to question
+        # with tf.variable_scope('pointer_net'):
+        #     self.q_pooling = None
+        #     self.pointers = pointer_net(self.p_matched, self.labels, self.q_pooling, Hp.ptr_units, Hp.ptr_layers,
+        #                                 Hp.ptr_dropout, is_training)
+        #
+        # # loss functions & optimization:
+        # with tf.variable_scope('loss'):
+        #     self.loss = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=self.labels, logits=self.pointers)
+        #     self.train_step = tf.train.AdamOptimizer(Hp.learning_rate).minimize(self.loss)
+        #
+        # # compute accuracy metrics
+        # with tf.variable_scope('metrics'):
+        #     # TODO: for any P/Q pair, there may be multiple correct answers
+        #     # exact match score (percentage of P/Q pairs where both start & end pointers match)
+        #     match_any = tf.equal(tf.argmax(self.pointers, axis=1, output_type=tf.int32), self.labels)
+        #     match_all = tf.cast(tf.equal(tf.reduce_sum(tf.cast(match_any, tf.int32), axis=1), 2), tf.float64)
+        #     self.exact_match = tf.reduce_mean(match_all)
             # TODO: implement F1 score
 
 
