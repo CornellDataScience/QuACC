@@ -76,7 +76,7 @@ def pointer_net(inputs, input_lengths, memory, memory_lengths, n_pointers, word_
     # TODO: find permanent solution (InferenceHelper?)
     start_tokens = tf.constant(START_TOKEN, shape=[batch_size], dtype=tf.int32)
     helper = GreedyEmbeddingHelper(word_matrix, start_tokens, END_TOKEN)
-    
+
     dec_cell = MultiRNNCell([_rnn_cell() for _ in range(n_layers)]) if n_layers > 1 else _rnn_cell()
     attn_cell = AttentionWrapper(dec_cell, attention, alignment_history=True)
     out_cell = tf.contrib.rnn.OutputProjectionWrapper(attn_cell, vocab_size)
