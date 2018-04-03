@@ -9,7 +9,7 @@ from loader import convert_to_ids
 from util import glove_dict, embedding_matrix
 
 
-class Model:
+class Model(object):
     """Main model
 
     Attributes:
@@ -62,7 +62,6 @@ class Model:
 
         # find pointers (in paragraph) to beginning and end of answer to question
         with tf.variable_scope('pointer_net'):
-            self.q_pooling = None
             self.pointers = pointer_net(self.p_encodings, self.p_word_lengths, self.q_encodings, self.q_word_lengths, 2,
                                         self.word_matrix, Hp.ptr_cell, Hp.ptr_layers, Hp.ptr_units, Hp.ptr_dropout,
                                         is_training)
