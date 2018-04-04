@@ -28,13 +28,14 @@ def tokenize(text, mode='word'):
         return tokens
 
 
-def convert_to_ids(text, ttype='question', mode='word'):
+def convert_to_ids(text, ttype='question', mode='word', pre_tokenized=False):
     """Return list of unique ids for the corresponding word or character in the input text.
 
     Args:
-        text (str):  string to vectorize
+        text (str or list):  string to vectorize
         ttype (str): either 'question' or 'paragraph'
         mode (str):  'character' or 'word'. Change the scope of tokenization
+        pre_tokenized (bool): whether text has already been tokenized
     Returns:
         array of unique ids for the corresponding characters or words
     """
@@ -44,8 +45,11 @@ def convert_to_ids(text, ttype='question', mode='word'):
 
     option = [Hp.max_q_chars, Hp.max_q_words] if ttype == 'question' else [Hp.max_p_chars, Hp.max_p_words]
     max_len = option[0] if mode == 'character' else option[1]
-    
-    tokenized = tokenize(text, mode)
+
+    if pre_tokenized:
+        tokenized = text
+    else:
+        tokenized = tokenize(text, mode)
     ids = np.zeros(max_len).astype(np.int32)
     for i, c in enumerate(tokenized[:max_len]):
         ids[i] = int(lookup[c])
@@ -56,9 +60,9 @@ def answer_pointers(answer, paragraph, ptr):
     """Find pointers to words corresponding to beginning and end of answer.
 
     Args:
-        answer (str):    Answer to question
-        paragraph (str): Relevant paragraph
-        ptr (int):       Character pointer to start of answer
+        answer (str):     Answer to question
+        paragraph (list): Tokenized paragraph
+        ptr (int):        Character pointer to start of answer
     Returns:
         list:            List of length 2: [word index of start, word index of end]
     """
@@ -96,17 +100,21 @@ class Loader(object):
                 self.paragraphs[topic].append(context)
             else:
                 self.paragraphs[topic] = [context]
+        print('Tokenizing paragraphs...')
+        tokenized_paragraphs = {}
+        for topic, pars in tqdm(self.paragraphs.items()):
+            tokenized_paragraphs[topic] = [tokenize(par) for par in pars]
         print('Processing Questions...')
         for i in tqdm(range(self.raw_questions.shape[0])):
             question = self.raw_questions.iloc[i]
             answer = question['Answer']
-            paragraph = self.paragraphs[question['Topic']][question['Paragraph #']]
+            paragraph = tokenized_paragraphs[question['Topic']][question['Paragraph #']]
             char_ptr = question['Pointer']
             pointers = answer_pointers(answer, paragraph, char_ptr)
             self.questions.append(question['Question'])
-            self.p_embeds.append(convert_to_ids(paragraph, 'paragraph'))
+            self.p_embeds.append(convert_to_ids(paragraph, 'paragraph', pre_tokenized=True))
             self.q_embeds.append(convert_to_ids(question['Question'], 'question'))
-            self.p_lengths.append(len(tokenize(paragraph)))
+            self.p_lengths.append(len(paragraph))
             self.q_lengths.append(len(tokenize(question['Question'])))
             self.pointers.append(pointers)
 
