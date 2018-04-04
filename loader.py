@@ -64,11 +64,8 @@ def answer_pointers(answer, paragraph, ptr):
     """
     answer = tokenize(answer)
     n = len(tokenize(paragraph[:ptr]))
-    paragraph = tokenize(paragraph[ptr:])
     answer_length = len(answer)
-    for start in (i for i, word in enumerate(paragraph) if word == answer[0]):
-        if paragraph[start: start + answer_length] == answer:
-            return [n + start, n + start + answer_length]
+    return [n, n + answer_length]
 
 
 class Loader(object):
