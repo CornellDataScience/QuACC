@@ -109,6 +109,9 @@ class Loader(object):
             self.p_lengths.append(len(tokenize(paragraph)))
             self.q_lengths.append(len(tokenize(question['Question'])))
             self.pointers.append(pointers)
+            if (i % 1000) == 0:
+                print('Saving first {} pointers...'.format(i))
+                np.save('./data/word_pointers', np.array(self.pointers).astype(int))
         pointers_df = pd.DataFrame(np.array(self.pointers).astype(int), columns=['Start', 'End'])
         combined = pd.concat([self.raw_questions, pointers_df], axis=1)[['Topic', 'Paragraph #', 'Question', 'Answer', 'Pointer', 'Start', 'End']]
         combined.to_csv('./data/questions.csv', index=False)
