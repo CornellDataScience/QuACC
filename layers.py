@@ -4,8 +4,9 @@ Layers of neural network architecture.
 
 import tensorflow as tf
 from tensorflow.contrib.rnn import DropoutWrapper, MultiRNNCell
-from tensorflow.contrib.seq2seq import AttentionWrapper, BahdanauAttention, BasicDecoder, GreedyEmbeddingHelper
+from tensorflow.contrib.seq2seq import AttentionWrapper, BahdanauAttention, BasicDecoder, GreedyEmbeddingHelper, TrainingHelper
 from tensorflow.contrib.seq2seq import dynamic_decode
+from tensorflow.contrib.rnn import GRUCell
 
 END_TOKEN = 0
 START_TOKEN = 1
@@ -43,11 +44,55 @@ def bidirectional_rnn(inputs, input_lengths, cell_type, n_layers, n_units, dropo
     outputs, states = tf.nn.bidirectional_dynamic_rnn(cell_fw, cell_bw, inputs, input_lengths, dtype=tf.float64)
     return tf.concat(outputs, axis=2), states
 
+def attention_alignment(input, input_lengths, memory, memory_lengths, n_layer, n_units,
+                        dropout_prob, cell_type=GRUCell, attention_mechanism=BahdanauAttention):
+    """Performs alignment over inputs, atteding memory
+
+    Args:
+        inputs (tensor):              Input sequence, with the shape of [Batch x seq_length x dimension]
+        input_lengths (tensor):       The length of input sequences. Used for dynamic unrolling
+        memory (tensor):              Sequence to attend
+        memory_lengths (tensor):      The length of memory. Used for dynamic unrolling
+        n_layers (int):               Number of layers in RNN
+        n_units  (int):               Number of units in RNN
+        dropout_prob (float):         Drop out rate for RNN cell
+        cell_type (method):           Type of RNN cell, GRU by default
+        attention_mechanism (method): Type of attention mechanism, Bahdanau by default
+        is_training (bool):           whether the model is training or testing
+
+    returns:
+        (tensor, tensor, tensor):
+    """
+    # get the tensor dimension
+    batch_size, seq_length, _ = inputs.get_shape().as_list()
+    # create a attention over the memory
+    attention = attention_mechanism(n_units, memory, memory_sequence_length=memory_lengths,
+    dtype=tf.float32)
+    # build an encoder RNN over the input sequence
+    if n_layers > 1:
+        attention_cell = MultiRNNCell([DropoutWrapper(cell_type(n_units), output_keep_prob=1.0-dropout_prob)
+                                       for _ in range(n_layers)])
+    else:
+        attention_cell = cell_type(n_units)
+        attention_cell = DropoutWrapper(attention_cell, output_keep_prob=1.0-dropout_prob)
+    # for each input to the next RNN cell, wire the attention mechanism
+    a_cell = AttentionWrapper(attention_cell, attention, alignment_history=True)
+    # define the initial state
+    # TODO: Do we ever feed an init state?
+    attention_state = a_cell.zero_state(batch_size, dtype=tf.float32)
+    # read input while attending over memory
+    helper = TrainingHelper(inputs=input, sequence_length=input_lengths)
+    decoder = BasicDecoder(a_cell, helper, attention_state)
+    # output of the decoder is a new representation of input sentence with attention over the question
+    outputs, states, _ = tf.contrib.seq2seq.dynamic_decode(decoder, maximum_iterations=seq_length)
+    # attention matrix for visualizing heatmap
+    aligned = tf.transpose(states.alignment_history.stack(), [1,0,2])
+    return outputs, states, aligned
 
 def pointer_net(inputs, input_lengths, memory, memory_lengths, n_pointers, word_matrix, cell_type, n_layers, n_units,
                 dropout_prob, is_training=True):
     """Pointer network.
-    
+
     Args:
         inputs
         input_lengths

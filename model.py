@@ -4,7 +4,7 @@ Main model.
 
 import tensorflow as tf
 from hyperparams import Hyperparams as Hp
-from layers import bidirectional_rnn, pointer_net
+from layers import bidirectional_rnn, attention_alignment, pointer_net
 from loader import convert_to_ids
 from util import glove_dict, embedding_matrix
 
@@ -51,14 +51,29 @@ class Model(object):
             self.q_encodings, _ = bidirectional_rnn(self.q_word_embeds, self.q_word_lengths, Hp.rnn1_cell,
                                                     Hp.rnn1_layers, Hp.rnn1_units, Hp.rnn1_dropout, is_training)
 
+        # proofread questions by attending over itself
+        with tf.variable_scope('q_proofread'):
+            self.q_pr_out, states, self.q_pr_heat = attention_alignment(self.q_encodings, self.q_word_lengths,
+                                                                   self.q_encodings, self.q_word_lengths,
+                                                                   Hp.attention_layers, Hp.attention_units,
+                                                                   Hp.attention_dropout, Hp.attention_cell,
+                                                                   Hp.attention_mech, is_training)
         # create question-aware paragraph encoding using bi-directional RNN with attention
         with tf.variable_scope('q_aware_encoding'):
-            self.pq_encoding, states = None, None
+            self.pq_encoding, states = attention_alignment(self.p_encodings, self.p_word_inputs,
+                                                           self.q_pr_out.rnn_output, self.q_word_lengths,
+                                                           Hp.attention_layers, Hp.attention_units,
+                                                           Hp.attention_dropout, Hp.attention_cell,
+                                                           Hp.attention_mech, is_training)
 
         # create paragraph encoding with self-matching attention
         # TODO: if decoder is uni-directional, which hidden state from BiRNN should be fed to initial state?
         with tf.variable_scope('self_matching'):
-            pass
+            self.pp_encoding, states = attention_alignment(self.pq_encoding.rnn_output, self.p_word_inputs,
+                                                           self.pq_encoding.rnn_output, self.p_word_inputs,
+                                                           Hp.attention_layers, Hp.attention_units,
+                                                           Hp.attention_dropout, Hp.attention_cell,
+                                                           Hp.attention_mech, is_training)
 
         # find pointers (in paragraph) to beginning and end of answer to question
         with tf.variable_scope('pointer_net'):
