@@ -10,6 +10,7 @@ import spacy
 import sys
 import time
 from loader import tokenize
+from tqdm import tqdm
 
 
 def generate_dict(save=True):
@@ -34,6 +35,7 @@ def generate_dict(save=True):
     # save
     if save:
         char2id = {char: i+2 for i, char in enumerate(c)}
+
         id2char = {i+2: char for i, char in enumerate(c)}
         word2id = {word: i+2 for i, word in enumerate(w)}
         id2word = {i+2: word for i, word in enumerate(w)}
@@ -49,27 +51,27 @@ def generate_dict(save=True):
 
 def process_context(data, save=True):
     all_context = []
-    for topic in data:
+    for topic in tqdm(data):
         article = topic['title']
-        for i, paragraph in enumerate(topic['paragraphs']):
+        for i, paragraph in tqdm(enumerate(topic['paragraphs'])):
             context = paragraph['context']
             all_context.append([article, i, context])
     headings = ['Topic', 'Paragraph #', 'Context']
     dataframe = pd.DataFrame(all_context, columns=headings)
     if save:
-        dataframe.to_csv('data/raw_paragraphs.csv', index=False)
+        dataframe.to_csv('data/raw_context.csv', index=False)
     return dataframe
 
 
 def process(data, save=True):
     all_questions = []
-    for topic in data:
+    for topic in tqdm(data):
         article = topic['title']
-        for i, paragraph in enumerate(topic['paragraphs']):
+        for i, paragraph in tqdm(enumerate(topic['paragraphs'])):
             for qa in paragraph['qas']:
-                question = qa['question']
+                question = qa['question'].strip()
                 for ans in qa['answers']:
-                    answer = ans['text']
+                    answer = ans['text'].strip()
                     answer_idx = ans['answer_start']
                     all_questions.append([article, i, question, answer, answer_idx])
     headings = ['Topic', 'Paragraph #', 'Question', 'Answer', 'Pointer']
@@ -79,9 +81,9 @@ def process(data, save=True):
     return dataframe
 
 
+nlp = spacy.load('en')
 def tokenize_spacy(docs):
     """Tokenize a list of documents using spacy."""
-    nlp = spacy.load('en')
     t0 = time.time()
     parsed = []
     # TODO: parallelize for loop
@@ -102,12 +104,12 @@ def main(args):
     if 'raw_questions.csv' not in os.listdir('data'):
         dataframe = process(data, save=True)
     else:
-        dataframe = pd.read_csv('data/raw_questions.csv')
+        dataframe = pd.read_csv('./data/raw_questions.csv')
 
     if 'raw_context.csv' not in os.listdir('data'):
         dataframe = process_context(data, save=True)
     else:
-        dataframe = pd.read_csv('data/raw_paragraphs.csv')
+        dataframe = pd.read_csv('./data/raw_context.csv')
 
     generate_dict()
     # tokenize(dataframe.loc[:, 'Answer'].values)

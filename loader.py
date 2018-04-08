@@ -7,8 +7,9 @@ import numpy as np
 import spacy
 from hyperparams import Hyperparams as Hp
 from tqdm import tqdm
+import os
 
-
+nlp = spacy.blank('en')
 def tokenize(text, mode='word'):
     """Return list of tokenized worsd or characters.
 
@@ -22,7 +23,6 @@ def tokenize(text, mode='word'):
     if mode == 'character':
         return [c for c in text]
     elif mode == 'word':
-        nlp = spacy.blank('en')
         parsed = nlp(text)
         tokens = [i.text for i in parsed]
         return tokens
@@ -84,11 +84,16 @@ class Loader(object):
 
         self.pre_process()
         self.create_batches()
+
         print('Loaded {} paragraphs & {} questions.'.format(len(self.paragraphs), len(self.questions)))
 
-    def pre_process(self):
+    def pre_process(self, load = False):
         """Pre-process data."""
         print('Processing paragraphs...')
+        pre_processed_pointers = None
+        if 'questions.csv' in os.listdir('data'):
+            pre_processed_pointers = pd.read_csv('./data/questions.csv')
+
         for i in tqdm(range(self.raw_paragraphs.shape[0])):
             topic = self.raw_paragraphs.iloc[i]['Topic']
             context = self.raw_paragraphs.iloc[i]['Context']
@@ -102,19 +107,23 @@ class Loader(object):
             answer = question['Answer']
             paragraph = self.paragraphs[question['Topic']][question['Paragraph #']]
             char_ptr = question['Pointer']
-            pointers = answer_pointers(answer, paragraph, char_ptr)
+            if pre_processed_pointers is not None:
+                pointers = [pre_processed_pointers.iloc[i]['Start'], pre_processed_pointers.iloc[i]['End']]
+            else:
+                pointers = answer_pointers(answer, paragraph, char_ptr)
             self.questions.append(question['Question'])
             self.p_embeds.append(convert_to_ids(paragraph, 'paragraph'))
             self.q_embeds.append(convert_to_ids(question['Question'], 'question'))
             self.p_lengths.append(len(tokenize(paragraph)))
             self.q_lengths.append(len(tokenize(question['Question'])))
             self.pointers.append(pointers)
-            if (i % 1000) == 0:
+            if (i % 1000) == 0 and pre_processed_pointers is None:
                 print('Saving first {} pointers...'.format(i))
                 np.save('./data/word_pointers', np.array(self.pointers).astype(int))
-        pointers_df = pd.DataFrame(np.array(self.pointers).astype(int), columns=['Start', 'End'])
-        combined = pd.concat([self.raw_questions, pointers_df], axis=1)[['Topic', 'Paragraph #', 'Question', 'Answer', 'Pointer', 'Start', 'End']]
-        combined.to_csv('./data/questions.csv', index=False)
+        if pre_processed_pointers is None:
+            pointers_df = pd.DataFrame(np.array(self.pointers).astype(int), columns=['Start', 'End'])
+            combined = pd.concat([self.raw_questions, pointers_df], axis=1)[['Topic', 'Paragraph #', 'Question', 'Answer', 'Pointer', 'Start', 'End']]
+            combined.to_csv('./data/questions.csv', index=False)
 
     def create_batches(self):
         """Randomly shuffle data and split into training batches."""
@@ -131,8 +140,8 @@ class Loader(object):
         # split training data into equally sized batches
         self.p_batch = np.split(self.p_embeds[permutation, :], self.n_batches, 0)
         self.q_batch = np.split(self.q_embeds[permutation, :], self.n_batches, 0)
-        self.p_l_batch = np.split(self.p_lengths[permutation, :], self.n_batches)
-        self.q_l_batch = np.split(self.q_lengths[permutation, :], self.n_batches)
+        self.p_l_batch = np.split(self.p_lengths[permutation], self.n_batches)
+        self.q_l_batch = np.split(self.q_lengths[permutation], self.n_batches)
         self.ptr_batch = np.split(self.pointers[permutation, :], self.n_batches, 0)
 
     def next_batch(self):
@@ -145,5 +154,4 @@ class Loader(object):
 
 
 if __name__ == '__main__':
-    print(convert_to_ids('What is in front of the Notre Dame Main Building?', mode='character'))
-    print(convert_to_ids('What is in front of the Notre Dame Main Building?', mode='word'))
+    l = Loader(100)
