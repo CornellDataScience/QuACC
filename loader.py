@@ -115,16 +115,19 @@ class Loader(object):
             self.pointers = np.load('./data/word_pointers.npy')
 
         else:
-            # pre_processed_pointers = None
-            # if 'questions.csv' in os.listdir('data'):
-            #     pre_processed_pointers = pd.read_csv('./data/questions.csv')
+            pre_processed_pointers = None
+            if 'questions.csv' in os.listdir('data'):
+                pre_processed_pointers = pd.read_csv('./data/questions.csv')
             print('Processing Questions...')
             for i in tqdm(range(self.raw_questions.shape[0])):
                 question = self.raw_questions.iloc[i]
                 answer = question['Answer']
                 paragraph = self.paragraphs[question['Topic']][question['Paragraph #']]
                 char_ptr = question['Pointer']
-                pointers = answer_pointers(answer, paragraph, char_ptr)
+                if pre_processed_pointers is None:
+                    pointers = answer_pointers(answer, paragraph, char_ptr)
+                else:
+                    pointers = [pre_processed_pointers.iloc[i]['Start'], pre_processed_pointers.iloc[i]['End']]
                 self.p_embeds.append(convert_to_ids(paragraph, 'paragraph'))
                 self.q_embeds.append(convert_to_ids(question['Question'], 'question'))
                 self.p_lengths.append(len(tokenize(paragraph)))
@@ -133,7 +136,7 @@ class Loader(object):
 
                 if (i % 1000) == 0:
                     print('Saving first {} pointers...'.format(i))
-                    np.save('./data/word_pointers', np.array(self.pointers).astype(int))
+                    # np.save('./data/word_pointers', np.array(self.pointers).astype(int))
 
             np.save('./data/paragraph_embed', np.array(self.p_embeds).astype(int))
             np.save('./data/question_embed', np.array(self.q_embeds).astype(int))
@@ -141,10 +144,10 @@ class Loader(object):
             np.save('./data/question_lengths', np.array(self.q_lengths).astype(int))
             np.save('./data/word_pointers', np.array(self.pointers).astype(int))
 
-            # if pre_processed_pointers is None:
-            #     pointers_df = pd.DataFrame(np.array(self.pointers).astype(int), columns=['Start', 'End'])
-            #     combined = pd.concat([self.raw_questions, pointers_df], axis=1)[['Topic', 'Paragraph #', 'Question', 'Answer', 'Pointer', 'Start', 'End']]
-            #     combined.to_csv('./data/questions.csv', index=False)
+            if pre_processed_pointers is None:
+                pointers_df = pd.DataFrame(np.array(self.pointers).astype(int), columns=['Start', 'End'])
+                combined = pd.concat([self.raw_questions, pointers_df], axis=1)[['Topic', 'Paragraph #', 'Question', 'Answer', 'Pointer', 'Start', 'End']]
+                combined.to_csv('./data/questions.csv', index=False)
 
     def create_batches(self):
         """Randomly shuffle data and split into training batches."""
@@ -176,4 +179,4 @@ class Loader(object):
 
 
 if __name__ == '__main__':
-    l = Loader(100, load=True)
+    l = Loader(100)
