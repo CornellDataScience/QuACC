@@ -35,7 +35,6 @@ def generate_dict(save=True):
     # save
     if save:
         char2id = {char: i+2 for i, char in enumerate(c)}
-
         id2char = {i+2: char for i, char in enumerate(c)}
         word2id = {word: i+2 for i, word in enumerate(w)}
         id2word = {i+2: word for i, word in enumerate(w)}

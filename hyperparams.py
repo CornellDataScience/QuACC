@@ -15,11 +15,15 @@ class Hyperparams:
     # data
     data_dir = './data'
 
+    # log
+    log_dir = './log'
+
     # training
     dropout = 0.2
     optimizer = 'adam'
     learning_rate = 0.0001
     batch_size = 64
+    training_epoch = 100
 
     # architecture
     emb_size = 300
