@@ -15,11 +15,15 @@ class Hyperparams:
     # data
     data_dir = './data'
 
+    # log
+    log_dir = './log'
+
     # training
     dropout = 0.2
     optimizer = 'adam'
     learning_rate = 0.0001
     batch_size = 64
+    training_epoch = 100
 
     # architecture
     emb_size = 300
@@ -39,6 +43,12 @@ class Hyperparams:
     rnn3_units = 75
     rnn3_attn_size = 75
     rnn3_dropout = 0.2
+
+    attention_cell = tf.contrib.rnn.GRUCell
+    attention_mech = tf.contrib.seq2seq.LuongAttention
+    attention_layers = 3
+    attention_units = 75
+    attention_dropout = 0.2
 
     ptr_cell = tf.contrib.rnn.GRUCell
     ptr_layers = 1

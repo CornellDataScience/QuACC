@@ -7,8 +7,9 @@ import numpy as np
 import spacy
 from hyperparams import Hyperparams as Hp
 from tqdm import tqdm
+import os
 
-
+nlp = spacy.blank('en')
 def tokenize(text, mode='word'):
     """Return list of tokenized words or characters.
 
@@ -22,7 +23,6 @@ def tokenize(text, mode='word'):
     if mode == 'character':
         return [c for c in text]
     elif mode == 'word':
-        nlp = spacy.blank('en')
         parsed = nlp(text)
         tokens = [i.text for i in parsed]
         return tokens
@@ -72,7 +72,7 @@ class Loader(object):
     """Load & batch text data."""
     def __init__(self, batch_size, paragraphs=None, questions=None, save=True, load=False):
         # TODO: implement saving/loading
-        self.raw_paragraphs = paragraphs or pd.read_csv('./data/raw_paragraphs.csv')
+        self.raw_paragraphs = paragraphs or pd.read_csv('./data/raw_context.csv')
         self.raw_questions = questions or pd.read_csv('./data/raw_questions.csv')
         self.batch_size = batch_size
         self.n_batches = None
@@ -82,11 +82,12 @@ class Loader(object):
         self.p_batch, self.p_l_batch, self.q_batch, self.q_l_batch, self.ptr_batch = None, None, None, None, None
         self.pointer = 0
 
-        self.pre_process()
+        self.pre_process(load)
         self.create_batches()
+
         print('Loaded {} paragraphs & {} questions.'.format(len(self.paragraphs), len(self.questions)))
 
-    def pre_process(self):
+    def pre_process(self, load = False):
         """Pre-process data."""
         print('Processing paragraphs...')
         for i in tqdm(range(self.raw_paragraphs.shape[0])):
@@ -99,22 +100,54 @@ class Loader(object):
         print('Processing Questions...')
         for i in tqdm(range(self.raw_questions.shape[0])):
             question = self.raw_questions.iloc[i]
-            answer = question['Answer']
-            paragraph = self.paragraphs[question['Topic']][question['Paragraph #']]
-            char_ptr = question['Pointer']
-            pointers = answer_pointers(answer, paragraph, char_ptr)
             self.questions.append(question['Question'])
-            self.p_embeds.append(convert_to_ids(paragraph, 'paragraph'))
-            self.q_embeds.append(convert_to_ids(question['Question'], 'question'))
-            self.p_lengths.append(len(tokenize(paragraph)))
-            self.q_lengths.append(len(tokenize(question['Question'])))
-            self.pointers.append(pointers)
-            if (i % 1000) == 0:
-                print('Saving first {} pointers...'.format(i))
-                np.save('./data/word_pointers', np.array(self.pointers).astype(int))
-        pointers_df = pd.DataFrame(np.array(self.pointers).astype(int), columns=['Start', 'End'])
-        combined = pd.concat([self.raw_questions, pointers_df], axis=1)[['Topic', 'Paragraph #', 'Question', 'Answer', 'Pointer', 'Start', 'End']]
-        combined.to_csv('./data/questions.csv', index=False)
+        if load:
+            assert 'paragraph_embed.npy' in os.listdir('./data'), "paragraph_embed.npy is missing"
+            assert 'question_embed.npy' in os.listdir('./data'), "question_embed.npy is missing"
+            assert 'paragraph_length.npy' in os.listdir('./data'), "paragraph_length.npy is missing"
+            assert 'question_lengths.npy' in os.listdir('./data'), "question_lengths.npy is missing"
+            assert 'word_pointers.npy' in os.listdir('./data'), "word_pointers.npy is missing"
+            print('Loading matrices...')
+            self.p_embeds = np.load('./data/paragraph_embed.npy')
+            self.q_embeds = np.load('./data/question_embed.npy')
+            self.p_lengths = np.load('./data/paragraph_length.npy')
+            self.q_lengths = np.load('./data/question_lengths.npy')
+            self.pointers = np.load('./data/word_pointers.npy')
+
+        else:
+            pre_processed_pointers = None
+            if 'questions.csv' in os.listdir('data'):
+                pre_processed_pointers = pd.read_csv('./data/questions.csv')
+            print('Processing Questions...')
+            for i in tqdm(range(self.raw_questions.shape[0])):
+                question = self.raw_questions.iloc[i]
+                answer = question['Answer']
+                paragraph = self.paragraphs[question['Topic']][question['Paragraph #']]
+                char_ptr = question['Pointer']
+                if pre_processed_pointers is None:
+                    pointers = answer_pointers(answer, paragraph, char_ptr)
+                else:
+                    pointers = [pre_processed_pointers.iloc[i]['Start'], pre_processed_pointers.iloc[i]['End']]
+                self.p_embeds.append(convert_to_ids(paragraph, 'paragraph'))
+                self.q_embeds.append(convert_to_ids(question['Question'], 'question'))
+                self.p_lengths.append(len(tokenize(paragraph)))
+                self.q_lengths.append(len(tokenize(question['Question'])))
+                self.pointers.append(pointers)
+
+                if (i % 1000) == 0:
+                    print('Saving first {} pointers...'.format(i))
+                    # np.save('./data/word_pointers', np.array(self.pointers).astype(int))
+
+            np.save('./data/paragraph_embed', np.array(self.p_embeds).astype(int))
+            np.save('./data/question_embed', np.array(self.q_embeds).astype(int))
+            np.save('./data/paragraph_length', np.array(self.p_lengths).astype(int))
+            np.save('./data/question_lengths', np.array(self.q_lengths).astype(int))
+            np.save('./data/word_pointers', np.array(self.pointers).astype(int))
+
+            if pre_processed_pointers is None:
+                pointers_df = pd.DataFrame(np.array(self.pointers).astype(int), columns=['Start', 'End'])
+                combined = pd.concat([self.raw_questions, pointers_df], axis=1)[['Topic', 'Paragraph #', 'Question', 'Answer', 'Pointer', 'Start', 'End']]
+                combined.to_csv('./data/questions.csv', index=False)
 
     def create_batches(self):
         """Randomly shuffle data and split into training batches."""
@@ -122,18 +155,19 @@ class Loader(object):
         # truncate training data so it is equally divisible into batches
         n_samples = self.n_batches * self.batch_size
         permutation = np.random.permutation(n_samples)
-        self.p_embeds = np.array(self.p_embeds)[:n_samples, :]
-        self.q_embeds = np.array(self.q_embeds)[:n_samples, :]
-        self.p_lengths = np.array(self.p_lengths)[:n_samples]
-        self.q_lengths = np.array(self.q_lengths)[:n_samples]
-        self.pointers = np.array(self.pointers)[:n_samples, :]
+
+        p_embeds_b = np.array(self.p_embeds)[:n_samples, :]
+        q_embeds_b = np.array(self.q_embeds)[:n_samples, :]
+        p_lengths_b = np.array(self.p_lengths)[:n_samples]
+        q_lengths_b = np.array(self.q_lengths)[:n_samples]
+        pointers_b = np.array(self.pointers)[:n_samples, :]
 
         # split training data into equally sized batches
-        self.p_batch = np.split(self.p_embeds[permutation, :], self.n_batches, 0)
-        self.q_batch = np.split(self.q_embeds[permutation, :], self.n_batches, 0)
-        self.p_l_batch = np.split(self.p_lengths[permutation, :], self.n_batches)
-        self.q_l_batch = np.split(self.q_lengths[permutation, :], self.n_batches)
-        self.ptr_batch = np.split(self.pointers[permutation, :], self.n_batches, 0)
+        self.p_batch = np.split(p_embeds_b[permutation, :], self.n_batches, 0)
+        self.q_batch = np.split(q_embeds_b[permutation, :], self.n_batches, 0)
+        self.p_l_batch = np.split(p_lengths_b[permutation], self.n_batches)
+        self.q_l_batch = np.split(q_lengths_b[permutation], self.n_batches)
+        self.ptr_batch = np.split(pointers_b[permutation, :], self.n_batches, 0)
 
     def next_batch(self):
         """Return current batch; shuffle batches every epoch."""
@@ -145,5 +179,4 @@ class Loader(object):
 
 
 if __name__ == '__main__':
-    print(convert_to_ids('What is in front of the Notre Dame Main Building?', mode='character'))
-    print(convert_to_ids('What is in front of the Notre Dame Main Building?', mode='word'))
+    l = Loader(100)
