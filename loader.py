@@ -10,7 +10,7 @@ from tqdm import tqdm
 
 
 def tokenize(text, mode='word'):
-    """Return list of tokenized worsd or characters.
+    """Return list of tokenized words or characters.
 
     Args:
         text (string): string to vectorize
