@@ -58,35 +58,33 @@ class Model(object):
 
         # proofread questions by attending over itself
         with tf.variable_scope('q_proofread'):
-            self.q_pr_out, states, self.q_pr_heat = attention_alignment(self.q_encodings, self.q_word_lengths,
+            self.q_pr_out, _, self.q_pr_attn = attention_alignment(self.q_encodings, self.q_word_lengths,
                                                                    self.q_encodings, self.q_word_lengths,
-                                                                   Hp.attention_layers, Hp.attention_units,
-                                                                   Hp.attention_dropout, Hp.attention_cell,
-                                                                   Hp.attention_mech, is_training)
+                                                                   Hp.attn_layers, Hp.attn_units,
+                                                                   Hp.attn_dropout, Hp.attn_cell,
+                                                                   Hp.attn_mech, is_training)
         # create question-aware paragraph encoding using bi-directional RNN with attention
         with tf.variable_scope('q_aware_encoding'):
-            self.pq_encoding, states, self.p2q_heat = attention_alignment(self.p_encodings, self.p_word_lengths,
-                                                           self.q_pr_out.rnn_output, self.q_word_lengths,
-                                                           Hp.attention_layers, Hp.attention_units,
-                                                           Hp.attention_dropout, Hp.attention_cell,
-                                                           Hp.attention_mech, is_training)
+            self.pq_encoding, _, self.p2q_attn = attention_alignment(self.p_encodings, self.p_word_lengths,
+                                                                     self.q_pr_out.rnn_output, self.q_word_lengths,
+                                                                     Hp.attn_layers, Hp.attn_units,
+                                                                     Hp.attn_dropout, Hp.attn_cell,
+                                                                     Hp.attn_mech, is_training)
 
         # create paragraph encoding with self-matching attention
         # TODO: if decoder is uni-directional, which hidden state from BiRNN should be fed to initial state?
         with tf.variable_scope('self_matching'):
-            self.pp_encoding, states, self.p2p_heat = attention_alignment(self.pq_encoding.rnn_output, self.p_word_lengths,
-                                                           self.pq_encoding.rnn_output, self.p_word_lengths,
-                                                           Hp.attention_layers, Hp.attention_units,
-                                                           Hp.attention_dropout, Hp.attention_cell,
-                                                           Hp.attention_mech, is_training)
+            self.pp_encoding, _, self.p2p_attn = attention_alignment(self.pq_encoding.rnn_output, self.p_word_lengths,
+                                                                     self.pq_encoding.rnn_output, self.p_word_lengths,
+                                                                     Hp.attn_layers, Hp.attn_units,
+                                                                     Hp.attn_dropout, Hp.attn_cell,
+                                                                     Hp.attn_mech, is_training)
 
         # find pointers (in paragraph) to beginning and end of answer to question
         with tf.variable_scope('pointer_net'):
-            self.pointer_prob = pointer_net(self.p_encodings, self.p_word_lengths, self.q_encodings, self.q_word_lengths, 2,
-                                        self.word_matrix, Hp.ptr_cell, Hp.ptr_layers, Hp.ptr_units, Hp.ptr_dropout,
-                                        is_training)
+            self.pointer_prob = pointer_net(self.pp_encoding, self.p_word_lengths, 2, self.word_matrix, 
+                                            Hp.ptr_cell, Hp.ptr_layers, Hp.ptr_units, Hp.ptr_dropout, is_training)
             self.pointers = tf.unstack(tf.argmax(self.pointer_prob, axis=2, output_type=tf.int32))
-
 
         # compute loss function
         with tf.variable_scope('loss'):
@@ -102,25 +100,26 @@ class Model(object):
             self.correct = tf.cast(tf.stack(equal), tf.float32)
             self.all_correct = tf.cast(tf.equal(tf.reduce_sum(self.correct, axis=0), 2), tf.float32)
             self.exact_match = tf.reduce_mean(self.all_correct)
-            # print(self.loss)
-            # self.train_step = tf.train.AdamOptimizer(self.learning_rate).minimize(self.loss)
+
+            self.train_step = tf.train.AdamOptimizer(self.learning_rate).minimize(self.loss)
 
 
 if __name__ == '__main__':
 
     question = 'What is in front of the Notre Dame Main Building?'
-    paragraph = 'Architecturally, the school has a Catholic character. Atop the Main Building\'s gold dome is a golden statue of the Virgin Mary. Immediately in front of the Main Building and facing it, is a copper statue of Christ with arms upraised with the legend "Venite Ad Me Omnes". Next to the Main Building is the Basilica of the Sacred Heart.'
+    paragraph = 'Architecturally, the school has a Catholic character. Atop the Main Building\'s gold dome is a ' \
+                'golden statue of the Virgin Mary. Immediately in front of the Main Building and facing it, is a ' \
+                'copper statue of Christ with arms upraised with the legend "Venite Ad Me Omnes". Next to the Main ' \
+                'Building is the Basilica of the Sacred Heart.'
 
     sample_pw = convert_to_ids(paragraph, ttype='paragraph', mode='word')
     sample_pw_l = len(sample_pw)
     sample_qw = convert_to_ids(question, ttype='question', mode='word')
     sample_qw_l = len(sample_qw)
-    pointers = [37,42]
+    pointers = [37, 42]
 
     # sample_pc = convert_to_ids(paragraph, ttype='paragraph', mode='character')
     # sample_qc = convert_to_ids(question, ttype='question', mode='character')
-
-
 
     QuACC = Model(batch_size=1, load_glove=True, is_training=False)
 

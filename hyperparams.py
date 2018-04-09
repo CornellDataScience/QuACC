@@ -44,11 +44,11 @@ class Hyperparams:
     rnn3_attn_size = 75
     rnn3_dropout = 0.2
 
-    attention_cell = tf.contrib.rnn.GRUCell
-    attention_mech = tf.contrib.seq2seq.LuongAttention
-    attention_layers = 3
-    attention_units = 75
-    attention_dropout = 0.2
+    attn_cell = tf.contrib.rnn.GRUCell
+    attn_mech = tf.contrib.seq2seq.LuongAttention
+    attn_layers = 3
+    attn_units = 75
+    attn_dropout = 0.2
 
     ptr_cell = tf.contrib.rnn.GRUCell
     ptr_layers = 1
