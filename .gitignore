@@ -1,2 +1,10 @@
+# unnecessary files
 .idea/
+.ipynb_checkpoints/
+__pycache__/
+
+# large files
 models/glove*
+data/paragraph_embed.npy
+data/word_matrix.npy
+
