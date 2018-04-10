@@ -82,7 +82,7 @@ class Model(object):
 
         # find pointers (in paragraph) to beginning and end of answer to question
         with tf.variable_scope('pointer_net'):
-            self.pointer_prob = pointer_net(self.pp_encoding, self.p_word_lengths, 2, self.word_matrix, 
+            self.pointer_prob = pointer_net(self.pp_encoding.rnn_output, self.p_word_lengths, 2, self.word_matrix,
                                             Hp.ptr_cell, Hp.ptr_layers, Hp.ptr_units, Hp.ptr_dropout, is_training)
             self.pointers = tf.unstack(tf.argmax(self.pointer_prob, axis=2, output_type=tf.int32))
 

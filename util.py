@@ -8,6 +8,7 @@ from tqdm import tqdm
 import argparse
 import sys
 
+
 def glove_dict(directory):
     """Load glove model.
 
@@ -48,6 +49,7 @@ def embedding_matrix(embedding_vectors, mode):
         if key in embedding_vectors:
             embedding[i] = embedding_vectors.get(key)              # insert embedding vector into matrix
     return embedding
+
 
 if __name__ == '__main__':
     word_glove = glove_dict(Hyperparams.glove_word)
