@@ -22,8 +22,8 @@ class Hyperparams:
     dropout = 0.2
     optimizer = 'adam'
     learning_rate = 0.0001
-    batch_size = 64
-    training_epoch = 100
+    batch_size = 100
+    n_epochs = 100
 
     # architecture
     emb_size = 300

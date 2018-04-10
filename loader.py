@@ -2,14 +2,17 @@
 Data loader class.
 """
 
-import pandas as pd
 import numpy as np
+import os
+import pandas as pd
+import random
 import spacy
 from hyperparams import Hyperparams as Hp
 from tqdm import tqdm
-import os
 
 nlp = spacy.blank('en')
+
+
 def tokenize(text, mode='word'):
     """Return list of tokenized words or characters.
 
@@ -70,113 +73,101 @@ def answer_pointers(answer, paragraph, ptr):
 
 class Loader(object):
     """Load & batch text data."""
-    def __init__(self, batch_size, paragraphs=None, questions=None, save=True, load=False):
-        # TODO: implement saving/loading
-        self.raw_paragraphs = paragraphs or pd.read_csv('./data/raw_context.csv')
-        self.raw_questions = questions or pd.read_csv('./data/raw_questions.csv')
+    def __init__(self, batch_size, split=(0.8, 0.1, 0.1)):
+        """Create loader.
+
+        Args:
+            batch_size (int):
+            split (tuple):
+        """
+        self.text_data = pd.read_csv('./data/all_data.csv')
         self.batch_size = batch_size
-        self.n_batches = None
 
-        self.paragraphs, self.questions = {}, []
-        self.p_embeds, self.q_embeds, self.p_lengths, self.q_lengths, self.pointers = [], [], [], [], []
-        self.p_batch, self.p_l_batch, self.q_batch, self.q_l_batch, self.ptr_batch = None, None, None, None, None
-        self.pointer = 0
+        self.splits = None
+        self.p_embeds, self.q_embeds = None, None
+        self.batches_tr, self.batches_va, self.batches_te = {}, {}, {}
+        self.ptr_tr, self.ptr_va, self.ptr_te = 0, 0, 0
 
-        self.pre_process(load)
-        self.create_batches()
+        self.pre_process()
+        self.create_batches(split)
+        print('')
 
-        print('Loaded {} paragraphs & {} questions.'.format(len(self.paragraphs), len(self.questions)))
-
-    def pre_process(self, load = False):
+    def pre_process(self):
         """Pre-process data."""
-        print('Processing paragraphs...')
-        for i in tqdm(range(self.raw_paragraphs.shape[0])):
-            topic = self.raw_paragraphs.iloc[i]['Topic']
-            context = self.raw_paragraphs.iloc[i]['Context']
-            if topic in self.paragraphs.keys():
-                self.paragraphs[topic].append(context)
-            else:
-                self.paragraphs[topic] = [context]
-        print('Processing Questions...')
-        for i in tqdm(range(self.raw_questions.shape[0])):
-            question = self.raw_questions.iloc[i]
-            self.questions.append(question['Question'])
-        if load:
-            assert 'paragraph_embed.npy' in os.listdir('./data'), "paragraph_embed.npy is missing"
-            assert 'question_embed.npy' in os.listdir('./data'), "question_embed.npy is missing"
-            assert 'paragraph_length.npy' in os.listdir('./data'), "paragraph_length.npy is missing"
-            assert 'question_lengths.npy' in os.listdir('./data'), "question_lengths.npy is missing"
-            assert 'word_pointers.npy' in os.listdir('./data'), "word_pointers.npy is missing"
-            print('Loading matrices...')
+        if os.path.exists('./data/paragraph_embed.npy'):
             self.p_embeds = np.load('./data/paragraph_embed.npy')
-            self.q_embeds = np.load('./data/question_embed.npy')
-            self.p_lengths = np.load('./data/paragraph_length.npy')
-            self.q_lengths = np.load('./data/question_lengths.npy')
-            self.pointers = np.load('./data/word_pointers.npy')
-
         else:
-            pre_processed_pointers = None
-            if 'questions.csv' in os.listdir('data'):
-                pre_processed_pointers = pd.read_csv('./data/questions.csv')
-            print('Processing Questions...')
-            for i in tqdm(range(self.raw_questions.shape[0])):
-                question = self.raw_questions.iloc[i]
-                answer = question['Answer']
-                paragraph = self.paragraphs[question['Topic']][question['Paragraph #']]
-                char_ptr = question['Pointer']
-                if pre_processed_pointers is None:
-                    pointers = answer_pointers(answer, paragraph, char_ptr)
-                else:
-                    pointers = [pre_processed_pointers.iloc[i]['Start'], pre_processed_pointers.iloc[i]['End']]
-                self.p_embeds.append(convert_to_ids(paragraph, 'paragraph'))
-                self.q_embeds.append(convert_to_ids(question['Question'], 'question'))
-                self.p_lengths.append(len(tokenize(paragraph)))
-                self.q_lengths.append(len(tokenize(question['Question'])))
-                self.pointers.append(pointers)
+            self.p_embeds = []
+            print('Generating paragraph embeddings...')
+            for i in tqdm(range(self.text_data.shape[0])):
+                paragraph = self.text_data.iloc[i]['Paragraph']
+                self.p_embeds.append(convert_to_ids(paragraph, 'paragraph', 'word'))
+            self.p_embeds = np.array(self.p_embeds)
 
-                if (i % 1000) == 0:
-                    print('Saving first {} pointers...'.format(i))
-                    # np.save('./data/word_pointers', np.array(self.pointers).astype(int))
+        if os.path.exists('./data/question_embed.npy'):
+            self.q_embeds = np.load('./data/question_embed.npy')
+        else:
+            self.q_embeds = []
+            print('Generating question embeddings...')
+            for i in tqdm(range(self.text_data.shape[0])):
+                question = self.text_data.iloc[i]['Question']
+                self.q_embeds.append(convert_to_ids(question, 'question', 'word'))
+                self.q_embeds = np.array(self.q_embeds)
 
-            np.save('./data/paragraph_embed', np.array(self.p_embeds).astype(int))
-            np.save('./data/question_embed', np.array(self.q_embeds).astype(int))
-            np.save('./data/paragraph_length', np.array(self.p_lengths).astype(int))
-            np.save('./data/question_lengths', np.array(self.q_lengths).astype(int))
-            np.save('./data/word_pointers', np.array(self.pointers).astype(int))
+    def _assign_batch(self, indices):
+        """Create a batch from list of indices."""
+        batches = dict()
+        batches['n_batches'] = n_batches = len(indices) // self.batch_size
+        batches['p_embeds'] = np.split(self.p_embeds[indices, :], n_batches)
+        batches['q_embeds'] = np.split(self.q_embeds[indices, :], n_batches)
+        selected_rows = self.text_data.reindex(indices)
+        batches['p_lengths'] = np.split(selected_rows['P_Length'].values, n_batches)
+        batches['q_lengths'] = np.split(selected_rows['Q_Length'].values, n_batches)
+        batches['pointers'] = np.split(selected_rows[['Start', 'End']].values, n_batches)
+        return batches
 
-            if pre_processed_pointers is None:
-                pointers_df = pd.DataFrame(np.array(self.pointers).astype(int), columns=['Start', 'End'])
-                combined = pd.concat([self.raw_questions, pointers_df], axis=1)[['Topic', 'Paragraph #', 'Question', 'Answer', 'Pointer', 'Start', 'End']]
-                combined.to_csv('./data/questions.csv', index=False)
+    def create_batches(self, split):
+        """Randomly shuffle data and split into training, validation & testing batches."""
+        total_samples = int((self.text_data.shape[0] // (self.batch_size/min(split))) * (self.batch_size/min(split)))
+        permutation = np.random.permutation(total_samples)
+        sections = np.cumsum(total_samples * np.array(split)).astype(int)[:len(split) - 1]
+        self.splits = np.split(permutation, sections)
 
-    def create_batches(self):
-        """Randomly shuffle data and split into training batches."""
-        self.n_batches = int(len(self.questions) / self.batch_size)
-        # truncate training data so it is equally divisible into batches
-        n_samples = self.n_batches * self.batch_size
-        permutation = np.random.permutation(n_samples)
+        self.batches_tr = self._assign_batch(self.splits[0])
+        if len(split) == 2:
+            self.batches_te = self._assign_batch(self.splits[1])
+        elif len(split) == 3:
+            self.batches_va = self._assign_batch(self.splits[1])
+            self.batches_te = self._assign_batch(self.splits[2])
 
-        p_embeds_b = np.array(self.p_embeds)[:n_samples, :]
-        q_embeds_b = np.array(self.q_embeds)[:n_samples, :]
-        p_lengths_b = np.array(self.p_lengths)[:n_samples]
-        q_lengths_b = np.array(self.q_lengths)[:n_samples]
-        pointers_b = np.array(self.pointers)[:n_samples, :]
+    def shuffle_train_batches(self):
+        """Shuffle batches."""
+        random.shuffle(self.splits[0])
+        self.batches_tr = self._assign_batch(self.splits[0])
 
-        # split training data into equally sized batches
-        self.p_batch = np.split(p_embeds_b[permutation, :], self.n_batches, 0)
-        self.q_batch = np.split(q_embeds_b[permutation, :], self.n_batches, 0)
-        self.p_l_batch = np.split(p_lengths_b[permutation], self.n_batches)
-        self.q_l_batch = np.split(q_lengths_b[permutation], self.n_batches)
-        self.ptr_batch = np.split(pointers_b[permutation, :], self.n_batches, 0)
+    def next_training_batch(self):
+        """Return current training batch; shuffle batches every epoch."""
+        self.ptr_tr = (self.ptr_tr + 1) % self.batches_tr['n_batches']
+        if self.ptr_tr == 0:
+            self.shuffle_train_batches()
+        batches, i = self.batches_tr, self.ptr_tr
+        return batches['p_embeds'][i], batches['q_embeds'][i], batches['p_lengths'][i], batches['q_lengths'][i], \
+            batches['pointers'][i]
 
-    def next_batch(self):
-        """Return current batch; shuffle batches every epoch."""
-        self.pointer = (self.pointer + 1) % self.n_batches
-        if self.pointer == 0:
-            self.create_batches()
-        return self.p_batch[self.pointer], self.q_batch[self.pointer], self.p_l_batch[self.pointer], \
-            self.q_l_batch[self.pointer], self.ptr_batch[self.pointer]
+    def next_validation_batch(self):
+        """Return current validation batch."""
+        self.ptr_va = (self.ptr_va + 1) % self.batches_va['n_batches']
+        batches, i = self.batches_va, self.ptr_va
+        return batches['p_embeds'][i], batches['q_embeds'][i], batches['p_lengths'][i], batches['q_lengths'][i], \
+            batches['pointers'][i]
+
+    def next_testing_batch(self):
+        """Return current testing batch."""
+        self.ptr_te = (self.ptr_te + 1) % self.batches_te['n_batches']
+        batches, i = self.batches_te, self.ptr_te
+        return batches['p_embeds'][i], batches['q_embeds'][i], batches['p_lengths'][i], batches['q_lengths'][i], \
+            batches['pointers'][i]
 
 
 if __name__ == '__main__':
-    l = Loader(100)
+    data = Loader(100)
