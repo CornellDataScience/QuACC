@@ -69,14 +69,13 @@ def attention_alignment(inputs, input_lengths, memory, memory_lengths, n_layers,
     # create a attention over the memory
     attention = attention_mechanism(n_units, memory, memory_sequence_length=memory_lengths, dtype=tf.float32)
     # build an encoder RNN over the input sequence
+    dropout_prob = 0 if not is_training else dropout_prob
     if n_layers > 1:
-        dropout_prob = 0 if not is_training else dropout_prob
-        attention_cell = MultiRNNCell([DropoutWrapper(cell_type(n_units), output_keep_prob=1.0-dropout_prob)
+        attention_cell = MultiRNNCell([DropoutWrapper(cell_type(n_units), output_keep_prob=1-dropout_prob)
                                        for _ in range(n_layers)])
     else:
-        dropout_prob = 0 if not is_training else dropout_prob
         attention_cell = cell_type(n_units)
-        attention_cell = DropoutWrapper(attention_cell, output_keep_prob=1.0-dropout_prob)
+        attention_cell = DropoutWrapper(attention_cell, output_keep_prob=1-dropout_prob)
     # for each input to the next RNN cell, wire the attention mechanism
     a_cell = AttentionWrapper(attention_cell, attention, alignment_history=True)
     # define the initial state
@@ -86,7 +85,8 @@ def attention_alignment(inputs, input_lengths, memory, memory_lengths, n_layers,
     helper = TrainingHelper(inputs=inputs, sequence_length=input_lengths)
     decoder = BasicDecoder(a_cell, helper, attention_state)
     # output of the decoder is a new representation of input sentence with attention over the question
-    outputs, states, _ = tf.contrib.seq2seq.dynamic_decode(decoder, maximum_iterations=seq_length)
+    outputs, states, _ = tf.contrib.seq2seq.dynamic_decode(decoder, maximum_iterations=seq_length, impute_finished=True)
+    outputs = tf.reshape(outputs.rnn_output, [batch_size, seq_length, outputs.rnn_output.get_shape().as_list()[-1]])
     # attention matrix for visualizing heatmap
     aligned = tf.transpose(states.alignment_history.stack(), [1, 0, 2])
     return outputs, states, aligned

@@ -66,7 +66,7 @@ class Model(object):
         # create question-aware paragraph encoding using bi-directional RNN with attention
         with tf.variable_scope('q_aware_encoding'):
             self.pq_encoding, _, self.p2q_attn = attention_alignment(self.p_encodings, self.p_word_lengths,
-                                                                     self.q_pr_out.rnn_output, self.q_word_lengths,
+                                                                     self.q_pr_out, self.q_word_lengths,
                                                                      Hp.attn_layers, Hp.attn_units,
                                                                      Hp.attn_dropout, Hp.attn_cell,
                                                                      Hp.attn_mech, is_training)
@@ -74,15 +74,16 @@ class Model(object):
         # create paragraph encoding with self-matching attention
         # TODO: if decoder is uni-directional, which hidden state from BiRNN should be fed to initial state?
         with tf.variable_scope('self_matching'):
-            self.pp_encoding, _, self.p2p_attn = attention_alignment(self.pq_encoding.rnn_output, self.p_word_lengths,
-                                                                     self.pq_encoding.rnn_output, self.p_word_lengths,
+            self.pp_encoding, _, self.p2p_attn = attention_alignment(self.pq_encoding, self.p_word_lengths,
+                                                                     self.pq_encoding, self.p_word_lengths,
                                                                      Hp.attn_layers, Hp.attn_units,
                                                                      Hp.attn_dropout, Hp.attn_cell,
                                                                      Hp.attn_mech, is_training)
 
         # find pointers (in paragraph) to beginning and end of answer to question
         with tf.variable_scope('pointer_net'):
-            self.pointer_prob = pointer_net(self.pp_encoding.rnn_output, self.p_word_lengths, 2, self.word_matrix,
+            pointer_inputs = tf.reshape(self.pp_encoding, [batch_size, Hp.max_p_words, -1])
+            self.pointer_prob = pointer_net(pointer_inputs, self.p_word_lengths, 2, self.word_matrix,
                                             Hp.ptr_cell, Hp.ptr_layers, Hp.ptr_units, Hp.ptr_dropout, is_training)
             self.pointers = tf.unstack(tf.argmax(self.pointer_prob, axis=2, output_type=tf.int32))
 
