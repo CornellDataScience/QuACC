@@ -51,6 +51,7 @@ def train():
 
             tr_loss /= data.batches_tr['n_batches']
             tr_acc /= data.batches_tr['n_batches']
+            print('Training loss: {}, accuracy={:.2f}%'.format(tr_loss, 100 * tr_acc))
 
             if ep % 10 == 0:
                 print('Validating...')
@@ -68,11 +69,14 @@ def train():
                     va_acc += acc
 
                 va_acc /= data.batches_va['n_batches']
+                print('Validation accuracy={:.2f}%'.format(va_acc))
                 if va_acc > best:
+                    print('Validation accuracy increased. Saving model...')
                     best = va_acc
-                    saver.save(sess, './models')
+                    saver.save(sess, './models/quacc')
                 else:
-                    saver.restore(sess, './models')
+                    print('Validation accuracy decreased. Restoring model...')
+                    saver.restore(sess, './models/quacc')
 
 
 if __name__ == '__main__':
