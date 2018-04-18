@@ -23,8 +23,8 @@ def train():
     init = tf.global_variables_initializer()
 
     with tf.Session() as sess:
-        merged = tf.summary.merge_all()
-        train_writer = tf.summary.FileWriter(os.path.join(Hp.log_dir, 'train'), sess.graph)
+        # merged = tf.summary.merge_all()
+        # train_writer = tf.summary.FileWriter(os.path.join(Hp.log_dir, 'train'), sess.graph)
         # test_writer = tf.summary.FileWriter(os.path.join(Hp.log_dir, 'val'))
         sess.run(init)
 
@@ -45,9 +45,10 @@ def train():
                 tr_acc += acc
 
                 if i % 100 == 0:
+                    pass
                     # tensorboard
-                    summary = sess.run(merged, feed_dict=train_dict)
-                    train_writer.add_summary(summary, i)
+                    # summary = sess.run(merged, feed_dict=train_dict)
+                    # train_writer.add_summary(summary, i)
 
             tr_loss /= data.batches_tr['n_batches']
             tr_acc /= data.batches_tr['n_batches']
