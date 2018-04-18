@@ -19,7 +19,7 @@ def generate_dict(save=True):
     # make sure the file exists
     assert 'all_data.csv' in os.listdir('data'), "Pre-process data first."
     # load dataframe
-    data = pd.read_csv('data/all_questions.csv', index_col=False)
+    data = pd.read_csv('data/all_data.csv', index_col=False)
     # array to text
     a_text = ' '.join(data['Answer'].values.astype(str))
     q_text = ' '.join(data['Question'].values.astype(str))

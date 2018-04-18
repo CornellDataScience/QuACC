@@ -2,29 +2,25 @@
 Miscellaneous helper methods.
 """
 
+import csv
 import numpy as np
+import pandas as pd
 from hyperparams import Hyperparams
 from tqdm import tqdm
-import argparse
-import sys
 
 
-def glove_dict(directory):
+def glove_dict(file_path):
     """Load glove model.
 
     Args:
-        directory (str): the directory to the glove
+        file_path (str): the directory to pre-trained GloVe .txt file
     Returns:
         dictionary of words (or characters) to the corresponding embedding
     """
-    print('Loading embeddings from {}...'.format(directory))
-    embedding_vectors = {}
-    with open(directory, 'r') as f:
-        for line in tqdm(f):
-            line_split = line.strip().split(" ")
-            vec = np.array(line_split[1:], dtype=float)
-            char = line_split[0]
-            embedding_vectors[char] = vec
+    print('Loading embeddings from {}...'.format(file_path))
+    glove = pd.read_table(file_path, sep=" ", index_col=0, header=None, quoting=csv.QUOTE_NONE)
+    matrix = glove.as_matrix()
+    embedding_vectors = {word: matrix[i] for i, word in enumerate(glove.index)}
     return embedding_vectors
 
 
