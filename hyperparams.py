@@ -70,9 +70,9 @@ class Hyperparams:
     char_vocab_size = len(char2id)
 
     # input size
-    max_q_chars = 80
-    max_q_words = 30
+    max_q_chars = 300
+    max_q_words = 60
 
     # input size
-    max_p_chars = 1000
+    max_p_chars = 2500
     max_p_words = 500
