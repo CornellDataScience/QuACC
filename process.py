@@ -12,26 +12,26 @@ import time
 from loader import tokenize
 from tqdm import tqdm
 
+NLP = spacy.load('en')
+
 
 def generate_dict(save=True):
     # make sure the file exists
-    assert 'raw_questions.csv' in os.listdir('data'), "Load Question Data First"
-    assert 'raw_context.csv' in os.listdir('data'), "Load Context Data First"
+    assert 'all_data.csv' in os.listdir('data'), "Pre-process data first."
     # load dataframe
-    rq = pd.read_csv('data/raw_questions.csv', index_col=False)
-    rc = pd.read_csv('data/raw_context.csv', index_col=False)
+    data = pd.read_csv('data/all_data.csv', index_col=False)
     # array to text
-    a_text = ' '.join(rq['Answer'].values.astype(str))
-    q_text = ' '.join(rq['Question'].values.astype(str))
-    c_text = ' '.join(rc['Context'].values.astype(str))
+    a_text = ' '.join(data['Answer'].values.astype(str))
+    q_text = ' '.join(data['Question'].values.astype(str))
+    p_text = ' '.join(data['Paragraph'].values.astype(str))
     # generate char dict
     c = set(tokenize(a_text, 'character'))
     c.update(set(tokenize(q_text, 'character')))
-    c.update(set(tokenize(c_text, 'character')))
+    c.update(set(tokenize(p_text, 'character')))
     # generate word dict
     w = set(tokenize(a_text, 'word'))
     w.update(set(tokenize(q_text, 'word')))
-    w.update(set(tokenize(c_text, 'word')))
+    w.update(set(tokenize(p_text, 'word')))
     # save
     if save:
         char2id = {char: i+2 for i, char in enumerate(c)}
@@ -80,14 +80,13 @@ def process(data, save=True):
     return dataframe
 
 
-nlp = spacy.load('en')
 def tokenize_spacy(docs):
     """Tokenize a list of documents using spacy."""
     t0 = time.time()
     parsed = []
     # TODO: parallelize for loop
     for i, doc in enumerate(docs):
-        parsed.append(nlp(str(doc)))
+        parsed.append(NLP(str(doc)))
         if (i + 1) % 100 == 0:
             print('Processed {} answers'.format(i + 1))
     t1 = time.time() - t0
