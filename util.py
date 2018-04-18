@@ -4,6 +4,7 @@ Miscellaneous helper methods.
 
 import csv
 import numpy as np
+import os
 import pandas as pd
 from hyperparams import Hyperparams
 from tqdm import tqdm
@@ -50,4 +51,4 @@ def embedding_matrix(embedding_vectors, mode):
 if __name__ == '__main__':
     word_glove = glove_dict(Hyperparams.glove_word)
     word_matrix = embedding_matrix(word_glove, 'word')
-    np.save(Hyperparams.data_dir, word_matrix)
+    np.save(os.path.join(Hyperparams.data_dir, 'word_matrix.npy'), word_matrix)
