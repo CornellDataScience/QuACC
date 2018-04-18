@@ -11,7 +11,7 @@ from hyperparams import Hyperparams as Hp
 from tqdm import tqdm
 
 nlp = spacy.blank('en')
-
+np.random.seed(0)
 
 def tokenize(text, mode='word'):
     """Return list of tokenized words or characters.
