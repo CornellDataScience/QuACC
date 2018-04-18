@@ -47,7 +47,7 @@ def bidirectional_rnn(inputs, input_lengths, cell_type, n_layers, n_units, dropo
 
 def attention_alignment(inputs, input_lengths, memory, memory_lengths, n_layers, n_units,
                         dropout_prob, cell_type=GRUCell, attention_mechanism=BahdanauAttention, is_training=True):
-    """Performs alignment over inputs, atteding memory
+    """Performs alignment over inputs, attending over memory
 
     Args:
         inputs (tensor):              Input sequence, with the shape of [Batch x seq_length x dimension]
@@ -64,8 +64,8 @@ def attention_alignment(inputs, input_lengths, memory, memory_lengths, n_layers,
     returns:
         (tensor, tensor, tensor):
     """
-    # get the tensor dimension
-    batch_size, seq_length, _ = inputs.get_shape().as_list()
+    # get tensor dimensions
+    batch_size, seq_length, dim = inputs.get_shape().as_list()
     # create a attention over the memory
     attention = attention_mechanism(n_units, memory, memory_sequence_length=memory_lengths, dtype=tf.float32)
     # build an encoder RNN over the input sequence
@@ -86,7 +86,8 @@ def attention_alignment(inputs, input_lengths, memory, memory_lengths, n_layers,
     decoder = BasicDecoder(a_cell, helper, attention_state)
     # output of the decoder is a new representation of input sentence with attention over the question
     outputs, states, _ = tf.contrib.seq2seq.dynamic_decode(decoder, maximum_iterations=seq_length, impute_finished=True)
-    outputs = tf.reshape(outputs.rnn_output, [batch_size, seq_length, outputs.rnn_output.get_shape().as_list()[-1]])
+    outputs = tf.pad(outputs.rnn_output, [[0, 0], [0, seq_length - tf.reduce_max(input_lengths)], [0, 0]])
+    outputs = tf.reshape(outputs, [batch_size, seq_length, dim])
     # attention matrix for visualizing heatmap
     aligned = tf.transpose(states.alignment_history.stack(), [1, 0, 2])
     return outputs, states, aligned
