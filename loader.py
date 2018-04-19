@@ -11,7 +11,7 @@ from hyperparams import Hyperparams as Hp
 from tqdm import tqdm
 
 nlp = spacy.blank('en')
-
+np.random.seed(0)
 
 def tokenize(text, mode='word'):
     """Return list of tokenized words or characters.
@@ -121,8 +121,8 @@ class Loader(object):
         batches['p_embeds'] = np.split(self.p_embeds[indices, :], n_batches)
         batches['q_embeds'] = np.split(self.q_embeds[indices, :], n_batches)
         selected_rows = self.text_data.reindex(indices)
-        batches['p_lengths'] = np.split(selected_rows['P_Length'].values, n_batches)
-        batches['q_lengths'] = np.split(selected_rows['Q_Length'].values, n_batches)
+        batches['p_lengths'] = np.split(np.minimum(selected_rows['P_Length'].values, Hp.max_p_words), n_batches)
+        batches['q_lengths'] = np.split(np.minimum(selected_rows['Q_Length'].values, Hp.max_q_words), n_batches)
         batches['pointers'] = np.split(selected_rows[['Start', 'End']].values, n_batches)
         return batches
 
