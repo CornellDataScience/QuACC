@@ -58,20 +58,6 @@ class Model(object):
 
         # proofread questions by attending over itself
         with tf.variable_scope('q_proofread'):
-<<<<<<< HEAD
-            self.q_pr_out, states, self.q_pr_heat = attention_alignment(self.q_encodings, self.q_word_lengths,
-                                                            self.q_encodings, self.q_word_lengths,
-                                                            Hp.attention_layers, Hp.attention_units,
-                                                            Hp.attention_dropout, Hp.attention_cell,
-                                                            Hp.attention_mech, is_training)
-        # create question-aware paragraph encoding using bi-directional RNN with attention
-        with tf.variable_scope('q_aware_encoding'):
-            self.pq_encoding, states, self.p2q_heat = attention_alignment(self.p_encodings, self.p_word_lengths,
-                                                            self.q_pr_out.rnn_output, self.q_word_lengths,
-                                                            Hp.attention_layers, Hp.attention_units,
-                                                            Hp.attention_dropout, Hp.attention_cell,
-                                                            Hp.attention_mech, is_training)
-=======
             self.q_pr_out, _, self.q_pr_attn = attention_alignment(self.q_encodings, self.q_word_lengths,
                                                                    self.q_encodings, self.q_word_lengths,
                                                                    Hp.attn_layers, Hp.attn_units,
@@ -84,24 +70,15 @@ class Model(object):
                                                                      Hp.attn_layers, Hp.attn_units,
                                                                      Hp.attn_dropout, Hp.attn_cell,
                                                                      Hp.attn_mech, is_training)
->>>>>>> ddd5acde7fc229ffa58ad395935f24b694abcc2a
 
         # create paragraph encoding with self-matching attention
         # TODO: if decoder is uni-directional, which hidden state from BiRNN should be fed to initial state?
         with tf.variable_scope('self_matching'):
-<<<<<<< HEAD
-            self.pp_encoding, states, self.p2p_heat = attention_alignment(self.pq_encoding.rnn_output, self.p_word_lengths,
-                                                            self.pq_encoding.rnn_output, self.p_word_lengths,
-                                                            Hp.attention_layers, Hp.attention_units,
-                                                            Hp.attention_dropout, Hp.attention_cell,
-                                                            Hp.attention_mech, is_training)
-=======
             self.pp_encoding, _, self.p2p_attn = attention_alignment(self.pq_encoding, self.p_word_lengths,
                                                                      self.pq_encoding, self.p_word_lengths,
                                                                      Hp.attn_layers, Hp.attn_units,
                                                                      Hp.attn_dropout, Hp.attn_cell,
                                                                      Hp.attn_mech, is_training)
->>>>>>> ddd5acde7fc229ffa58ad395935f24b694abcc2a
 
         # find pointers (in paragraph) to beginning and end of answer to question
         with tf.variable_scope('pointer_net'):
@@ -136,7 +113,7 @@ if __name__ == '__main__':
                 'Building is the Basilica of the Sacred Heart.'
 
     sample_pw = convert_to_ids(paragraph, ttype='paragraph', mode='word')
-    sample_pw_l = np.array([len(sample_pw)])
+    sample_pw_l = len(sample_pw)
     sample_qw = convert_to_ids(question, ttype='question', mode='word')
     sample_qw_l = len(sample_qw)
     pointers = [37, 42]
@@ -146,16 +123,16 @@ if __name__ == '__main__':
 
     QuACC = Model(batch_size=1, load_glove=True, is_training=False)
 
-    with tf.Session() as sess:
-        init = tf.global_variables_initializer()
-        sess.run(init)
-        feed_dict = {
-            QuACC.p_word_inputs: sample_pw.reshape(1, -1),
-            QuACC.q_word_inputs: sample_qw.reshape(1, -1),
-            QuACC.p_word_lengths: sample_pw_l.reshape(1, -1),
-            QuACC.q_word_lengths: sample_qw_l.reshape(1, -1),
-        }
-        index = sess.run([QuACC.q_word_embeds, QuACC.p_word_embeds], feed_dict=feed_dict)
-
-        print(index[0][1].shape)  # 1 x 80 x (2 x char len)
-        # print(index[0][1].shape)  # 1 x 80 x (2 x char len)
+    # with tf.Session() as sess:
+    #     init = tf.global_variables_initializer()
+    #     sess.run(init)
+    #     feed_dict = {
+    #         QuACC.p_word_inputs: sample_pw.reshape(1, -1),
+    #         QuACC.q_word_inputs: sample_qw.reshape(1, -1),
+    #         QuACC.p_word_lengths: sample_pw_l.reshape(1, -1),
+    #         QuACC.q_word_lengths: sample_qw_l.reshape(1, -1),
+    #     }
+    #     index = sess.run([QuACC.q_word_embeds, QuACC.p_word_embeds], feed_dict=feed_dict)
+    #
+    #     print(index[0][1].shape)  # 1 x 80 x (2 x char len)
+    #     # print(index[0][1].shape)  # 1 x 80 x (2 x char len)

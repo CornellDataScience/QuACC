@@ -103,6 +103,7 @@ class Loader(object):
                 paragraph = self.text_data.iloc[i]['Paragraph']
                 self.p_embeds.append(convert_to_ids(paragraph, 'paragraph', 'word'))
             self.p_embeds = np.array(self.p_embeds)
+            np.save('./data/paragraph_embed.npy', self.p_embeds)
 
         if os.path.exists('./data/question_embed.npy'):
             self.q_embeds = np.load('./data/question_embed.npy')
@@ -112,7 +113,9 @@ class Loader(object):
             for i in tqdm(range(self.text_data.shape[0])):
                 question = self.text_data.iloc[i]['Question']
                 self.q_embeds.append(convert_to_ids(question, 'question', 'word'))
-                self.q_embeds = np.array(self.q_embeds)
+            self.q_embeds = np.array(self.q_embeds)
+            np.save('./data/question_embed.npy', self.q_embeds)
+
 
     def _assign_batch(self, indices):
         """Create a batch from list of indices."""
