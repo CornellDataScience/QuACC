@@ -3,6 +3,7 @@
 \usepackage{graphicx}
 \usepackage[margin=1in]{geometry}
 \usepackage{subfig}
+\usepackage{enumitem}
 \usepackage{hyperref}
 
 \graphicspath{{./img/}{./images/}}
@@ -48,7 +49,7 @@ As one of the many abilities required in order for a computer to achieve artific
 Despite recent advances in natural language processing, this task has proven difficult for a number of reasons. The first is simply the intrinsic difficulty of the task itself: answering what may appear to be simple questions often require a large amount of general knowledge and hierarchical reasoning that we often dismiss as ``common sense''. Take for example the statement ``San Jose Sharks pursuing free agent John Tavares''. Without the background knowledge that the San Jose Sharks are a professional sports team, or that free agents refer to players without a contract, it is easy to misunderstand that some sort of spy is literally being chased by sharks. The second is the lack, until recently, of an industry-standard task analogous to the ImageNet challenge that spurred many advances in computer vision. To this end, the release of the Stanford Question Answering Dataset (SQuAD) \cite{SQuAD}, represents a significant advancement in the field. This dataset consists of over 100,000 questions on Wikipedia articles, where the answer to every question is a subsection of a relevant article. Specifically, each sample consists of four identifiers: a paragraph containing relevant information, a question, and pointers (in the paragraph) to the beginning and end of the answer; a sample is shown in Figure~\ref{fig:squadExample}.
 
 \begin{figure}[h]
-	\includegraphics[width=0.69\textwidth]{squad_example.png}
+	\includegraphics[width=0.8\textwidth]{squad_example.png}
 	\centering
 	\caption{A sample from the SQuAD dataset}
 	\label{fig:squadExample}
@@ -64,7 +65,7 @@ Almost all of the work in this field relies on recurrent neural networks (approa
 Although words are theoretically categorical in that there exists a finite number of words in the English language, it is not efficient to use one-hot encodings for two main reasons: the large number of proper nouns found in Wikipedia articles makes the set of unique tokens very large, and attempts to learn the semantic similarity of words through the contexts in which they appear have proven successful. To address the second point, we use pre-trained GloVe \cite{GloVe} vectors to encode the meaning of passages of text. Similarly to word2vec \cite{word2vec}, GloVe produces vector space embeddings of words where geometric relationships are reflective of semantic relationships, which as shown in Figure~\ref{fig:gloveExample}, extend to proper nouns. Several versions of GloVe exist, but we use the 300-dimensional embeddings with a vocabulary size of 2.2 million, trained on Common Crawl data.
 
 \begin{figure}[h]
-	\includegraphics[width=0.36	\textwidth]{glove.jpg}
+	\includegraphics[width=0.45\textwidth]{glove.jpg}
 	\centering
 	\caption{An example of the linear substructures found in GloVe embeddings (ZIP code - city)}
 	\label{fig:gloveExample}
@@ -131,7 +132,7 @@ Our preliminary experiments focused on smaller models and synthetic, simple task
 We used a pointer network with a 3 layer (uni-directional) GRU with 50 units in each cell for both the encoder and decoder, with Bahdanau attention. We used 50-dimensional GloVe embeddings, and trained with a learning rate of 0.001 using the Adam optimizer \cite{Adam}. Due to the exceeding simplicity of the task, the model was able to achieve 100\% testing accuracy within 2 epochs. In addition, the pointer probabilities were all approximately equal to 1, leaving little room for analysis and interpretation. This experiment was conducted largely for the purpose of verifying the correctness of our TensorFlow implementation, and the expected accuracy was attained (although faster than expected).  
 
 \subsection{Variable Question with Synthetic Data}
-Our second experiment increased the complexity of the task by increasing the number of subjects from 2 to 5, and more significantly, randomizing the question to ask ``Where is \textless subject\textgreater?''. The inspiration behind this dataset is the bAbI \cite{bAbI} project at Facebook AI Research, a project for automatic text understanding and reasoning, that uses children's books as part of their data.
+Our second experiment increased the complexity of the task by increasing the number of subjects from 2 to 5, and more significantly, randomizing the question to ask ``Where is \textless subject\textgreater?''. The inspiration behind this dataset is the bAbI \cite{bAbI} project at Facebook AI Research, a project for automatic text understanding and reasoning, that uses children's books as part of their data. \\
 
 \begin{figure}[h]
 	\includegraphics[width=0.5\textwidth]{fake_data2.png}
@@ -155,19 +156,19 @@ We generate two levels of abstraction for the question: a higher-level embedding
 	P2P alignment is a self-matching alignment over the RNN-embedding of the paragraph. This process was first proposed in \cite{RNet} in an attempt to efficiently extract information from long passages where important word-level context may exist sparsely. We hypothesize that this layer learns to attend over informative regions of the paragraph. 
 \end{enumerate}
  
-Our interpretations of the role of each alignment are discussed further in Section \ref{discussion}. \\
-
 \begin{figure}[h]
-	\includegraphics[width=0.55\textwidth]{model.png}
+	\includegraphics[width=0.65\textwidth]{model.png}
 	\centering
 	\caption{Model architecture for synthetic task 2}
 	\label{fig:QA_model}
 \end{figure}
 
+Our interpretations of the role of each alignment are discussed further in Section \ref{discussion}. \\
+
 The 3 attention alignments are concatenated and fed to the final layer, a pointer net, which outputs the exact location of the answer within the input paragraph. We used one-layer bidirectional GRU with 100 units in each cell with 30\% dropout rate for all encoders and decoders in this architecture. We used a slightly higher learning rate of 0.015, which expedites the learning process in order to combat vanishing gradient effects. We used Luong attention \cite{Luong} for all attention layers, which is known to contain less training parameters. In training this model, we observed a severe case of the vanishing gradient problem where the gradient for each neuron is quickly saturated after a few epochs. We were able to mitigate this effect by using Exponential Linear Units (ELU) \cite{ELU} as activation function, and our model converged to 100\% testing accuracy after 30 epochs.
 
 \begin{figure}[h]
-	\includegraphics[width=0.7\textwidth]{training.png}
+	\includegraphics[width=0.65\textwidth]{training.png}
 	\centering
 	\caption{Training (orange) \& validation (blue) loss (left) \& accuracy (right)}
 \end{figure}
@@ -176,21 +177,32 @@ The 3 attention alignments are concatenated and fed to the final layer, a pointe
 \section{Discussion} \label{discussion}
 
 \subsection{Results}
+Attention mechanisms allow us to conceptually hypothesize the ``thought process'' of trained deep learning models, by inspecting the outputs from each attention alignment layer and constructing a heat map of attention weights between two inputs at test time. In this section, we qualitatively interpret attention weights and their functionalities. (See Figures~\ref{fig:heatMaps1} \& ~\ref{fig:heatMaps2})
 
 \begin{figure}[h]
 	\centering
-	\subfloat[Q2P attention weights]{{\includegraphics[width=0.25\textwidth]{q2p_heatmap.png}}}
+	\subfloat[Q2P attention weights]{{\includegraphics[width=0.27\textwidth]{q2p_heatmap.png}}}
 	\qquad
-	\subfloat[High-Q2P attention weights]{{\includegraphics[width=0.25\textwidth]{hq2p_heatmap.png}}}
+	\subfloat[High-Q2P attention weights]{{\includegraphics[width=0.27\textwidth]{hq2p_heatmap.png}}}
 	\caption{Alignment attention weights}
 	\label{fig:heatMaps1}
 \end{figure}
 
-\begin{figure}[h]
+\begin{enumerate}[label=(\alph*)]
+	\item \textbf{Q2P Alignment} \\
+	As hypothesized earlier, Q2P alignment operates on low-level semantics, meaning the model attends based on word-level similarity without any contextual understanding of the passage. The most salient pattern we observe in the figure is the attention weights that scan around the word ``cat'', which corresponds to the subject of the question, ``where is the cat ?'. We can speculate that the model successfully learned to pre-attentively filter out sentences whose subject corresponds with that of the question. Conversely, when the model reads the word ``cat'' in the question, it attends over other subjects of the passage, namely ``football player'' and ``teacher''. We hypothesize that the Q2P alignment layer works as a coarse filter which learns to focus on sentences based on a subject. We speculate the filter is coarse since the attended weight values are fairly low and the resulted heat map is blurred around relevant information. 
+	
+	\item \textbf{High-Q2P alignment} \\
+	High-Q2P alignment synthesizes information from the RNN-embedding of the input sentences, which reflects more abstract contexts of words. Similar to Q2P alignment, High-Q2P alignment also attends over the word ``cat'' while reading the question. We can also observe how refined the filter is compared to the Q2P alignment as it distributes higher attention weights over words. By the end of the question, High-Q2P alignment outputs the heaviest attention weights over 4 candidate answers to the question: ``canada'' (twice), ``classroom'', and ``hospital''. We hypothesize that High-Q2P alignment operates as a more refined filter of words and successfully learns to detect location words, which is the appropriate answer to the question, ``where is \textless subject\textgreater ?''
+\end{enumerate}
+
+Although attention layers between different inputs, Q2P alignment and High-Q2P alignment, demonstrate highly intuitive results, the interpretation of self-matching layers are rather challenging. For example, P2P alignment did not seem to learn anything meaningful from our dataset. This is expected behavior since self-matching layers are designed to extract information that sparsely exist in a large corpus of text while our dataset only contains samples of at most 5 short sentences, and therefore the model does not need to utilize the self-matching process. Input self-matching attends strongly over the words ``the cat?'' which is the differentiating factor between all questions within the domain of our synthetic dataset. Given this behavior, we expect that this layer will learn to attend over different information as we increase the variance of question types in the dataset. 
+
+\begin{figure}[!h]
 	\centering
-	\subfloat[P2P attention weights]{{\includegraphics[width=0.42\textwidth]{pp_heatmap.png}}}
+	\subfloat[P2P attention weights]{{\includegraphics[width=0.47\textwidth]{pp_heatmap.png}}}
 	\qquad
-	\subfloat[Q2Q attention weights]{{\includegraphics[width=0.42\textwidth]{qq_heatmap.png}}}
+	\subfloat[Q2Q attention weights]{{\includegraphics[width=0.47\textwidth]{qq_heatmap.png}}}
 	\caption{Self-alignment attention weights}
 	\label{fig:heatMaps2}
 \end{figure}
